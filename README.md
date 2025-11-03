@@ -32,9 +32,7 @@ Proyek ini dibangun menggunakan tumpukan teknologi modern yang berfokus pada per
 
 * Node.js (v18 atau lebih baru)
 * npm / yarn / pnpm
-* Akun Supabase
-
-### 1. Kloning Repositori
+* Akun Supabase, Minta sambungkan ke project supabasenya atau minta file .env
 
 ```bash
 git clone [https://github.com/username/nama-repositori.git](https://github.com/username/nama-repositori.git)

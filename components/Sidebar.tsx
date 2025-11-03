@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'; // <-- TAMBAHKAN IMPORT INI
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabaseClient';
@@ -26,9 +27,17 @@ export default function Sidebar({ userName, menuItems }: SidebarProps) {
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-black">Mutiara Bangsa</h1>
-        <p className="text-sm text-gray-500 mt-1">Selamat datang, {userName}</p>
+      {/* UBAH DIV HEADER INI */}
+      <div className="flex items-center gap-2 p-4 border-b border-gray-200">
+        <Image
+          src="/img/MUTIARABANGSA.png"
+          alt="Mutiara Bangsa Logo"
+          width={100}
+          height={34}
+        />
+        <span className="text-lg font-medium text-gray-700 truncate">
+          {userName}
+        </span>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
@@ -39,7 +48,7 @@ export default function Sidebar({ userName, menuItems }: SidebarProps) {
             className={cn(
               'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
               item.active
-                ? 'bg-cyan text-primary-foreground font-medium'
+                ? 'bg-cyan text-primary-foreground font-medium' // <-- UBAH DARI bg-cyan
                 : 'text-gray-700 hover:bg-gray-100'
             )}
           >

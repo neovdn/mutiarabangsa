@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image'; // <-- TAMBAHKAN IMPORT INI
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { supabase } from '@/lib/supabaseClient';
-import { ShoppingBag, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react'; // <-- ShoppingBag dihapus
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State untuk lihat password
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -78,12 +79,16 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-cyan p-3 rounded-full">
-              <ShoppingBag className="h-8 w-8 text-black" />
-            </div>
+            <Image
+              src="/img/MUTIARABANGSA.png"
+              alt="Mutiara Bangsa Logo"
+              width={140}
+              height={38}
+              priority
+            />
           </div>
           <CardTitle className="text-3xl font-bold">
-            Selamat Datang Kembali!
+            Selamat Datang
           </CardTitle>
           <CardDescription className="text-gray-500">
             Masuk untuk melanjutkan belanja di Mutiara Bangsa.

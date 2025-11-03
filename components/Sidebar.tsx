@@ -39,7 +39,7 @@ export default function Sidebar({ userName, menuItems }: SidebarProps) {
             className={cn(
               'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
               item.active
-                ? 'bg-cyan text-black font-medium'
+                ? 'bg-cyan text-primary-foreground font-medium'
                 : 'text-gray-700 hover:bg-gray-100'
             )}
           >

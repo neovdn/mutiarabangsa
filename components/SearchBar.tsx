@@ -10,7 +10,7 @@ export default function SearchBar() {
       <Input
         type="text"
         placeholder="Cari produk..."
-        className="pl-10 py-6 border-2 border-gray-200 rounded-lg focus:border-cyan focus:ring-cyan"
+        className="pl-10 py-6 border-2 border-gray-200 rounded-lg focus:border-primary focus:ring-primary"
       />
     </div>
   );

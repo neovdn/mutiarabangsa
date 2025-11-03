@@ -64,8 +64,8 @@ const config: Config = {
           '5': 'hsl(var(--chart-5))',
         },
         cyan: {
-          DEFAULT: '#00FFFF',
-          500: '#00FFFF',
+          DEFAULT: '#00b7ffd6',
+          500: '#00b7ffd6',
         },
         magenta: {
           DEFAULT: '#FF00FF',

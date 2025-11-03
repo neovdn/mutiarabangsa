@@ -6,14 +6,22 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { supabase } from '@/lib/supabaseClient';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -41,15 +49,13 @@ export default function RegisterPage() {
       if (authError) throw authError;
 
       if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: authData.user.id,
-              full_name: formData.fullName,
-              role: 'customer',
-            },
-          ]);
+        const { error: profileError } = await supabase.from('profiles').insert([
+          {
+            id: authData.user.id,
+            full_name: formData.fullName,
+            role: 'customer',
+          },
+        ]);
 
         if (profileError) throw profileError;
 
@@ -71,9 +77,11 @@ export default function RegisterPage() {
               <ShoppingBag className="h-8 w-8 text-black" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">Daftar Akun</CardTitle>
+          <CardTitle className="text-3xl font-bold">
+            Gabung Mutiara Bangsa
+          </CardTitle>
           <CardDescription className="text-gray-500">
-            Buat akun baru di Mutiara Bangsa
+            Daftar akun baru untuk mulai berbelanja perlengkapan sekolah.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,7 +99,9 @@ export default function RegisterPage() {
                 type="text"
                 placeholder="Masukkan nama lengkap"
                 value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, fullName: e.target.value })
+                }
                 required
                 className="border-2"
               />
@@ -104,7 +114,9 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="nama@email.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 required
                 className="border-2"
               />
@@ -112,35 +124,73 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Minimal 6 karakter"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                minLength={6}
-                className="border-2"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Minimal 6 karakter"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                  minLength={6}
+                  className="border-2 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  aria-label={
+                    showPassword ? 'Sembunyikan password' : 'Tampilkan password'
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Ulangi password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                minLength={6}
-                className="border-2"
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Ulangi password"
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    setFormData({ ...formData, confirmPassword: e.target.value })
+                  }
+                  required
+                  minLength={6}
+                  className="border-2 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  aria-label={
+                    showConfirmPassword
+                      ? 'Sembunyikan password'
+                      : 'Tampilkan password'
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-cyan hover:bg-cyan/90 text-black font-semibold py-6"
+              className="w-full bg-cyan hover:bg-primary/90 text-primary-foreground font-semibold py-6"
               disabled={loading}
             >
               {loading ? 'Mendaftar...' : 'Daftar'}
@@ -148,7 +198,10 @@ export default function RegisterPage() {
 
             <div className="text-center text-sm text-gray-500">
               Sudah punya akun?{' '}
-              <Link href="/login" className="text-cyan hover:underline font-medium">
+              <Link
+                href="/login"
+                className="text-primary hover:underline font-medium"
+              >
                 Masuk disini
               </Link>
             </div>

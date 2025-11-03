@@ -39,3 +39,25 @@ Proyek ini dibangun menggunakan tumpukan teknologi modern yang berfokus pada per
 ```bash
 git clone [https://github.com/username/nama-repositori.git](https://github.com/username/nama-repositori.git)
 cd nama-repositori
+
+### 2. Instalasi Dependensi
+
+Setelah masuk ke direktori proyek, instal semua dependensi yang diperlukan menggunakan package manager pilihan Anda:
+
+```bash
+# Menggunakan npm
+npm install
+
+# Menggunakan yarn
+yarn install
+
+# Menggunakan pnpm
+pnpm install
+
+### 3. Jalankan Project
+
+Jalankan project dengan perintah:
+
+```bash
+# Menggunakan npm
+npm run dev

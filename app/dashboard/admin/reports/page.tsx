@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import SearchBar from '@/components/SearchBar';
 import { supabase } from '@/lib/supabaseClient';
-import { Store, ShoppingCart, History } from 'lucide-react';
+import { LayoutDashboard, Package, Receipt, BarChart3 } from 'lucide-react';
 import type { Profile } from '@/types/user';
 
-export default function CustomerDashboard() {
+export default function AdminReportsPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,8 +33,8 @@ export default function CustomerDashboard() {
         return;
       }
 
-      if (profileData.role === 'admin') {
-        router.push('/dashboard/admin');
+      if (profileData.role !== 'admin') {
+        router.push('/dashboard/customer');
         return;
       }
 
@@ -58,50 +58,57 @@ export default function CustomerDashboard() {
 
   const menuItems = [
     {
-      label: 'Katalog',
-      icon: <Store className="h-5 w-5" />,
-      href: '/dashboard/customer',
-      active: true,
-    },
-    {
-      label: 'Keranjang',
-      icon: <ShoppingCart className="h-5 w-5" />,
-      href: '/dashboard/customer/cart',
+      label: 'Dashboard',
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      href: '/dashboard/admin',
       active: false,
     },
     {
-      label: 'Riwayat Pesanan',
-      icon: <History className="h-5 w-5" />,
-      href: '/dashboard/customer/history',
+      label: 'Produk',
+      icon: <Package className="h-5 w-5" />,
+      href: '/dashboard/admin/products',
       active: false,
+    },
+    {
+      label: 'Transaksi',
+      icon: <Receipt className="h-5 w-5" />,
+      href: '/dashboard/admin/transactions',
+      active: false,
+    },
+    {
+      label: 'Laporan',
+      icon: <BarChart3 className="h-5 w-5" />,
+      href: '/dashboard/admin/reports',
+      active: true, // <-- Aktif di halaman ini
     },
   ];
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar userName={profile?.full_name || 'Customer'} menuItems={menuItems} />
+      <Sidebar userName={profile?.full_name || 'Admin'} menuItems={menuItems} />
 
       <main className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-black mb-2">Katalog Produk</h2>
-            <p className="text-gray-600">Temukan perlengkapan sekolah yang Anda butuhkan</p>
+            <h2 className="text-3xl font-bold text-black mb-2">Laporan Toko</h2>
+            <p className="text-gray-600">Analisis data penjualan dan performa toko Anda</p>
           </div>
 
           <div className="mb-8">
             <SearchBar />
           </div>
 
+          {/* Konten Halaman Laporan */}
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <div className="max-w-md mx-auto">
-              <div className="bg-gradient-to-br from-cyan-100 to-magenta-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                <Store className="h-12 w-12 text-black" />
+              <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <BarChart3 className="h-12 w-12 text-gray-400" />
               </div>
               <h3 className="text-2xl font-semibold text-black mb-3">
-                Selamat Berbelanja!
+                Laporan Penjualan
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Gunakan menu di sidebar untuk menjelajahi katalog produk, mengelola keranjang belanja, dan melihat riwayat pesanan Anda.
+                Gunakan halaman ini untuk melihat laporan penjualan, produk terlaris, dan data analitik lainnya untuk mengembangkan bisnis Anda.
               </p>
             </div>
           </div>

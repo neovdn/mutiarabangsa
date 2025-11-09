@@ -1,6 +1,8 @@
 'use server';
 
-import { supabase } from '@/lib/supabaseClient';
+// Menggunakan client server yang baru
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
+
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { Product } from '@/types/product';
@@ -18,8 +20,9 @@ export type FormState = {
   errors?: Record<string, string[] | undefined>;
 };
 
-// Fungsi untuk upload gambar ke Supabase Storage
+// Fungsi 'uploadImage' yang menerima client terotentikasi
 async function uploadImage(
+  supabase: ReturnType<typeof createSupabaseServerClient>, // <-- Terima client sebagai argumen
   productId: string,
   imageFile: File,
 ): Promise<string | null> {
@@ -31,10 +34,9 @@ async function uploadImage(
   const newFileName = `${productId}-${Date.now()}.${fileExtension}`;
   const filePath = `product-images/${newFileName}`;
 
-  // Pastikan Anda sudah membuat bucket 'product-images' di Supabase
-  // dengan akses publik untuk 'read'.
+  // 'supabase' di sini sekarang adalah client yang terotentikasi (Admin)
   const { error } = await supabase.storage
-    .from('product-images') 
+    .from('product-images')
     .upload(filePath, imageFile);
 
   if (error) {
@@ -54,6 +56,9 @@ export async function upsertProduct(
   prevState: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  // Buat client server DI DALAM server action
+  const supabase = createSupabaseServerClient();
+
   const validatedFields = productSchema.safeParse({
     name: formData.get('name'),
     description: formData.get('description'),
@@ -73,17 +78,13 @@ export async function upsertProduct(
   let imageUrl = formData.get('current_image_url') as string | null;
 
   try {
-    // --- PERBAIKAN DI SINI ---
-    // Kita petakan hasil validasi secara eksplisit untuk mencocokkan tipe Product
     const dataToUpsert: Omit<Product, 'id' | 'created_at' | 'updated_at'> = {
       name: validatedFields.data.name,
-      description: validatedFields.data.description || null, // Mengubah undefined -> null
+      description: validatedFields.data.description || null,
       category_id: validatedFields.data.category_id,
-      image_url: imageUrl, // Default ke gambar lama
+      image_url: imageUrl,
     };
-    // --- BATAS PERBAIKAN ---
 
-    // Tentukan ID: gunakan yang ada (edit) atau buat baru (create)
     const idToUse = productId || crypto.randomUUID();
 
     // 1. Upload gambar baru jika ada
@@ -97,19 +98,25 @@ export async function upsertProduct(
             .remove([`product-images/${oldImageName}`]);
         }
       }
-      // Upload gambar baru
-      imageUrl = await uploadImage(idToUse, imageFile);
+      // Kirim client server ke fungsi uploadImage
+      imageUrl = await uploadImage(supabase, idToUse, imageFile);
       dataToUpsert.image_url = imageUrl;
     }
 
     // 2. Upsert data produk
     const { error } = await supabase.from('products').upsert({
-      id: idToUse, // Tentukan ID di sini
+      id: idToUse,
       ...dataToUpsert,
       updated_at: new Date().toISOString(),
     });
 
-    if (error) throw error;
+    if (error) {
+       // Cek apakah error terkait RLS
+      if (error.code === '42501') {
+         throw new Error('Gagal menyimpan produk: Hak akses ditolak. Pastikan RLS untuk tabel "products" sudah benar.');
+      }
+      throw error;
+    }
 
     revalidatePath('/dashboard/admin/products');
     return {
@@ -126,6 +133,8 @@ export async function upsertProduct(
 
 // Server Action untuk Hapus Produk
 export async function deleteProduct(productId: string): Promise<FormState> {
+  const supabase = createSupabaseServerClient();
+
   if (!productId) {
     return { success: false, message: 'ID Produk tidak valid.' };
   }
@@ -137,7 +146,12 @@ export async function deleteProduct(productId: string): Promise<FormState> {
       .delete()
       .eq('product_id', productId);
 
-    if (variantError) throw variantError;
+    if (variantError) {
+      if (variantError.code === '42501') {
+         throw new Error('Gagal menghapus varian: Hak akses ditolak. Pastikan RLS untuk tabel "product_variants" sudah benar.');
+      }
+      throw variantError;
+    }
 
     // Hapus produk
     const { error: productError } = await supabase
@@ -145,14 +159,21 @@ export async function deleteProduct(productId: string): Promise<FormState> {
       .delete()
       .eq('id', productId);
 
-    if (productError) throw productError;
+    if (productError) {
+       if (productError.code === '42501') {
+         throw new Error('Gagal menghapus produk: Hak akses ditolak. Pastikan RLS untuk tabel "products" sudah benar.');
+      }
+      throw productError;
+    }
 
     // (Opsional) Hapus gambar dari storage
-    // ... logika untuk mengambil image_url dan menghapusnya dari storage ...
+    // ...
 
     revalidatePath('/dashboard/admin/products');
     return { success: true, message: 'Produk berhasil dihapus.' };
   } catch (e: any) {
+    // --- PERBAIKAN DI SINI ---
+    // Mengganti `false` menjadi `success: false`
     return { success: false, message: `Gagal menghapus produk: ${e.message}` };
   }
 }

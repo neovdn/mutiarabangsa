@@ -1,6 +1,7 @@
 /*
  * File dimodifikasi: components/AdminNavbar.tsx
- * Deskripsi: Menambahkan fungsionalitas responsif untuk tampilan mobile (sheet/drawer menu).
+ * Deskripsi: Memperbarui navigasi dengan menu dropdown "Toko" (Produk & Stok)
+ * dan memperbarui menu mobile (Sheet) dengan Accordion.
  */
 'use client';
 
@@ -13,7 +14,10 @@ import {
   Package,
   Receipt,
   BarChart3,
-  Menu, // Icon baru untuk mobile menu
+  Menu,
+  ChevronDown, // <-- Icon untuk dropdown
+  Warehouse,  // <-- Icon baru untuk Stok
+  Store,      // <-- Icon baru untuk Toko
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { cn } from '@/lib/utils';
@@ -27,7 +31,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-// Import komponen Sheet dari shadcn/ui
 import {
   Sheet,
   SheetContent,
@@ -35,23 +38,27 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useState } from 'react'; // Untuk mengelola state Sheet
+// Impor Accordion untuk menu mobile
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { useState } from 'react';
 
 interface AdminNavbarProps {
   userName: string;
 }
 
-// Menu navigasi khusus untuk Admin
-const adminNavLinks = [
+// --- Navigasi dipecah untuk dropdown ---
+
+// 1. Link biasa
+const simpleNavLinks = [
   {
     label: 'Dashboard',
     href: '/dashboard/admin',
     icon: <LayoutDashboard className="h-4 w-4" />,
-  },
-  {
-    label: 'Produk',
-    href: '/dashboard/admin/products',
-    icon: <Package className="h-4 w-4" />,
   },
   {
     label: 'Transaksi',
@@ -65,6 +72,21 @@ const adminNavLinks = [
   },
 ];
 
+// 2. Link untuk dropdown "Toko"
+const tokoDropdownLinks = [
+  {
+    label: 'Produk',
+    href: '/dashboard/admin/products',
+    icon: <Package className="h-4 w-4" />,
+  },
+  {
+    label: 'Stok Barang',
+    href: '/dashboard/admin/stock',
+    icon: <Warehouse className="h-4 w-4" />,
+  },
+];
+// ----------------------------------------
+
 // Helper untuk mendapatkan inisial nama
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -75,12 +97,17 @@ const getInitials = (name: string) => {
 export default function AdminNavbar({ userName }: AdminNavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isSheetOpen, setIsSheetOpen] = useState(false); // State untuk mengontrol Sheet
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
+
+  // Cek apakah salah satu link "Toko" sedang aktif
+  const isTokoActive =
+    pathname === '/dashboard/admin/products' ||
+    pathname === '/dashboard/admin/stock';
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
@@ -100,7 +127,7 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
                 <Link
                   href="/dashboard/admin"
                   className="flex items-center gap-2"
-                  onClick={() => setIsSheetOpen(false)} // Tutup sheet saat klik logo
+                  onClick={() => setIsSheetOpen(false)}
                 >
                   <Image
                     src="/img/mutirabangsalands.png"
@@ -111,12 +138,70 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
                   />
                 </Link>
               </SheetHeader>
-              <div className="flex flex-col gap-2 p-4">
-                {adminNavLinks.map((link) => (
+
+              {/* --- Menu Navigasi Mobile Baru --- */}
+              <div className="flex flex-col gap-1 p-4">
+                {/* 1. Link Dashboard (Biasa) */}
+                <Link
+                  href="/dashboard/admin"
+                  onClick={() => setIsSheetOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-all hover:bg-gray-100',
+                    pathname === '/dashboard/admin'
+                      ? 'bg-cyan text-primary-foreground hover:bg-cyan'
+                      : 'text-gray-600 hover:text-black'
+                  )}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+
+                {/* 2. Accordion untuk "Toko" */}
+                <Accordion
+                  type="single"
+                  collapsible
+                  defaultValue={isTokoActive ? 'item-1' : undefined}
+                >
+                  <AccordionItem value="item-1" className="border-b-0">
+                    <AccordionTrigger
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-all hover:bg-gray-100 hover:no-underline',
+                        isTokoActive && 'text-black',
+                        !isTokoActive && 'text-gray-600'
+                      )}
+                    >
+                      <Store className="h-4 w-4" />
+                      <span className="flex-1 text-left">Toko</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-0 pl-7 space-y-1">
+                      {tokoDropdownLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setIsSheetOpen(false)}
+                          className={cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-all hover:bg-gray-100',
+                            pathname === link.href
+                              ? 'bg-cyan text-primary-foreground hover:bg-cyan'
+                              : 'text-gray-600 hover:text-black'
+                          )}
+                        >
+                          {link.icon}
+                          {link.label}
+                        </Link>
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
+                {/* 3. Link Sisa (Transaksi, Laporan) */}
+                {simpleNavLinks.slice(1).map((
+                  link // Mulai dari index 1 (skip dashboard)
+                ) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setIsSheetOpen(false)} // Tutup sheet saat klik link
+                    onClick={() => setIsSheetOpen(false)}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-all hover:bg-gray-100',
                       pathname === link.href
@@ -129,6 +214,8 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
                   </Link>
                 ))}
               </div>
+              {/* --- Akhir Menu Navigasi Mobile Baru --- */}
+
               <div className="absolute bottom-4 left-4 right-4">
                 <Button
                   onClick={handleLogout}
@@ -144,7 +231,10 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
         </div>
 
         {/* Logo (Selalu tampil) */}
-        <Link href="/dashboard/admin" className="flex items-center gap-2 ml-4 md:ml-0">
+        <Link
+          href="/dashboard/admin"
+          className="flex items-center gap-2 ml-4 md:ml-0"
+        >
           <Image
             src="/img/mutirabangsalands.png"
             alt="Mutiara Bangsa Logo"
@@ -154,30 +244,114 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
           />
         </Link>
 
-        {/* Admin Navigation Links (Hanya tampil di desktop) */}
+        {/* --- Admin Navigation Links Desktop Baru --- */}
         <div className="hidden md:flex items-center gap-2">
-          {adminNavLinks.map((link) => (
-            <Button
-              key={link.href}
-              asChild
-              variant={pathname === link.href ? 'default' : 'ghost'}
-              size="sm"
-              className={cn(
-                'font-medium',
-                pathname === link.href
-                  ? 'bg-cyan text-primary-foreground'
-                  : 'text-gray-600 hover:text-black'
-              )}
+          {/* 1. Link Dashboard */}
+          <Button
+            asChild
+            variant={pathname === '/dashboard/admin' ? 'default' : 'ghost'}
+            size="sm"
+            className={cn(
+              'font-medium',
+              pathname === '/dashboard/admin'
+                ? 'bg-cyan text-primary-foreground'
+                : 'text-gray-600 hover:text-black'
+            )}
+          >
+            <Link
+              href="/dashboard/admin"
+              className="flex items-center gap-2"
             >
-              <Link href={link.href} className="flex items-center gap-2">
-                {link.icon}
-                {link.label}
-              </Link>
-            </Button>
-          ))}
-        </div>
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </Button>
 
-        {/* User Menu (Selalu tampil) */}
+          {/* 2. Dropdown Toko */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={isTokoActive ? 'default' : 'ghost'}
+                size="sm"
+                className={cn(
+                  'font-medium',
+                  isTokoActive
+                    ? 'bg-cyan text-primary-foreground'
+                    : 'text-gray-600 hover:text-black'
+                )}
+              >
+                <Store className="h-4 w-4 mr-2" />
+                Toko
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              {tokoDropdownLinks.map((link) => (
+                <DropdownMenuItem key={link.href} asChild>
+                  <Link
+                    href={link.href}
+                    className={cn(
+                      'flex items-center gap-2 cursor-pointer',
+                      pathname === link.href && 'font-semibold text-cyan-600'
+                    )}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* 3. Link Transaksi */}
+          <Button
+            asChild
+            variant={
+              pathname === '/dashboard/admin/transactions' ? 'default' : 'ghost'
+            }
+            size="sm"
+            className={cn(
+              'font-medium',
+              pathname === '/dashboard/admin/transactions'
+                ? 'bg-cyan text-primary-foreground'
+                : 'text-gray-600 hover:text-black'
+            )}
+          >
+            <Link
+              href="/dashboard/admin/transactions"
+              className="flex items-center gap-2"
+            >
+              <Receipt className="h-4 w-4" />
+              Transaksi
+            </Link>
+          </Button>
+
+          {/* 4. Link Laporan */}
+          <Button
+            asChild
+            variant={
+              pathname === '/dashboard/admin/reports' ? 'default' : 'ghost'
+            }
+            size="sm"
+            className={cn(
+              'font-medium',
+              pathname === '/dashboard/admin/reports'
+                ? 'bg-cyan text-primary-foreground'
+                : 'text-gray-600 hover:text-black'
+            )}
+          >
+            <Link
+              href="/dashboard/admin/reports"
+              className="flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Laporan
+            </Link>
+          </Button>
+        </div>
+        {/* --- Akhir Admin Navigation Links Desktop Baru --- */}
+
+        {/* User Menu (Tidak berubah) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

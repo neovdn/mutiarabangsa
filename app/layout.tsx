@@ -1,12 +1,14 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+// Hapus import Inter
+// import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] });
+// const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Mutiara Bangsa',
-  description: 'Website e-commerce untuk penjualan seragam dan perlengkapan sekolah',
+  description:
+    'Website e-commerce untuk penjualan seragam dan perlengkapan sekolah',
   icons: {
     icon: '/img/MUTIARABANGSA.png',
   },
@@ -19,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className="">{children}</body>
     </html>
   );
 }

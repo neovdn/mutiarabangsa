@@ -3,19 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image'; // <-- TAMBAHKAN IMPORT INI
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/lib/supabaseClient';
-import { Eye, EyeOff } from 'lucide-react'; // <-- ShoppingBag dihapus
+import { Eye, EyeOff, CheckCircle } from 'lucide-react';
+
+// Helper component untuk list fitur di sisi kiri
+const FeatureItem = ({ text }: { text: string }) => (
+  <div className="flex items-center gap-3">
+    {/* Ukuran ikon disesuaikan */}
+    <CheckCircle className="h-5 w-5 text-white" />
+    {/* Ukuran font disesuaikan */}
+    <span className="text-base">{text}</span>
+  </div>
+);
 
 export default function LoginPage() {
   const router = useRouter();
@@ -75,26 +79,55 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 to-white p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <Image
-              src="/img/MUTIARABANGSA.png"
-              alt="Mutiara Bangsa Logo"
-              width={140}
-              height={38}
-              priority
-            />
+    // Mengembalikan grid layout ke 1:1 di desktop, dan 1 kolom di mobile
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      {/* Kolom Kiri (Desain) - Dibuat responsif */}
+      <div className="relative flex h-64 md:h-screen flex-col items-center justify-center p-6 md:p-10 bg-login-bg bg-cover bg-center text-white">
+        {/* Overlay Gradien */}
+        <div className="absolute inset-0 bg-login-gradient z-0" />
+
+        {/* Konten */}
+        {/* Konten dibuat responsif (ukuran & padding) */}
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <Image
+            src="/img/MUTIARABANGSA.png"
+            alt="Mutiara Bangsa Logo"
+            width={160} // Ukuran desktop
+            height={46}
+            priority
+            className="mb-4 md:mb-6 w-[140px] md:w-[160px]" // Ukuran mobile w-[140px]
+          />
+          {/* Ukuran font dibuat responsif */}
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 md:mb-4">
+            Mutiara Bangsa
+          </h1>
+          {/* Ukuran font dan max-width dibuat responsif */}
+          <p className="text-sm md:text-base max-w-xs md:max-w-sm mb-6 md:mb-8">
+            Website pembelian dan pemesanan seragam sekolah
+          </p>
+
+          {/* List fitur disembunyikan di mobile */}
+          <div className="hidden md:flex flex-col space-y-3 text-left self-start max-w-sm">
+            <FeatureItem text="Katalog Produk Online" />
+            <FeatureItem text="Sistem Pemesanan Online" />
+            <FeatureItem text="Admin Dashboard" />
+            <FeatureItem text="Inventory Forecast & Restock Helper" />
           </div>
-          <CardTitle className="text-3xl font-bold">
+        </div>
+      </div>
+
+      {/* Kolom Kanan (Form) */}
+      <div className="flex items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-sm">
+          {/* Logo mobile di panel ini dihapus karena panel kiri sudah terlihat */}
+          
+          <h2 className="text-3xl font-bold text-center mb-2">
             Selamat Datang
-          </CardTitle>
-          <CardDescription className="text-gray-500">
-            Masuk untuk melanjutkan belanja di Mutiara Bangsa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </h2>
+          <p className="text-gray-500 text-center mb-8">
+            Masuk ke akun anda untuk mengakses toko
+          </p>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -113,13 +146,13 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="nama@email.com"
+                placeholder="example@email.com"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                className="border-2"
+                className="bg-gray-100 border-none"
               />
             </div>
 
@@ -129,13 +162,13 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Masukkan password"
+                  placeholder="********"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
                   required
-                  className="border-2 pr-10"
+                  className="bg-gray-100 border-none pr-10"
                 />
                 <button
                   type="button"
@@ -154,9 +187,28 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Bagian "Ingat saya" & "Lupa password?" */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="remember" />
+                <Label
+                  htmlFor="remember"
+                  className="text-sm font-normal text-gray-600"
+                >
+                  Ingat saya
+                </Label>
+              </div>
+              <Link
+                href="#"
+                className="text-sm text-primary hover:underline font-medium"
+              >
+                Lupa password?
+              </Link>
+            </div>
+
             <Button
               type="submit"
-              className="w-full bg-cyan hover:bg-primary/90 text-primary-foreground font-semibold py-6"
+              className="w-full bg-button-gradient text-black font-semibold py-6 shadow-md hover:opacity-90 rounded-sm"
               disabled={loading}
             >
               {loading ? 'Masuk...' : 'Masuk'}
@@ -168,12 +220,12 @@ export default function LoginPage() {
                 href="/register"
                 className="text-primary hover:underline font-medium"
               >
-                Daftar disini
+                Registrasi disini
               </Link>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

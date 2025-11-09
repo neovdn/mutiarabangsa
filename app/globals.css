@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Mengganti font Inter dengan DM Sans */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
 
 @layer base {
   :root {
@@ -38,6 +39,17 @@
     @apply border-border;
   }
   body {
+    /* font-sans akan otomatis mengambil dari tailwind.config.ts */
     @apply bg-white text-black font-sans;
+  }
+}
+
+/* Menambahkan utility class untuk gradien kustom */
+@layer utilities {
+  .bg-login-gradient {
+    background: linear-gradient(153.69deg, rgba(250, 212, 20, 0.78) 0%, rgba(0, 166, 227, 0.78) 50%, rgba(232, 32, 126, 0.78) 100%);
+  }
+  .bg-button-gradient {
+    background: linear-gradient(90deg, rgba(250, 212, 20, 0.22) 0%, rgba(0, 166, 227, 0.22) 50%, rgba(232, 32, 126, 0.22) 100%);
   }
 }

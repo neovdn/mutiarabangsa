@@ -95,7 +95,7 @@ export default function LoginPage() {
             width={160} // Ukuran desktop
             height={46}
             priority
-            className="mb-4 md:mb-6 w-[140px] md:w-[160px]" // Ukuran mobile w-[140px]
+            className="mb-4 md:mb-6 w-[140px] md:w-[160px] h-auto" // <-- DITAMBAHKAN 'h-auto'
           />
           {/* Ukuran font dibuat responsif */}
           <h1 className="text-3xl md:text-4xl font-bold mb-2 md:mb-4">
@@ -120,7 +120,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-sm">
           {/* Logo mobile di panel ini dihapus karena panel kiri sudah terlihat */}
-          
+
           <h2 className="text-3xl font-bold text-center mb-2">
             Selamat Datang
           </h2>

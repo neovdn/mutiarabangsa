@@ -27,44 +27,57 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-// --- TAMBAHAN BARU ---
-// Tipe baru untuk kategori yang sudah diproses
+// --- Tipe Sederhana (Hanya perlu ID dan Nama) ---
 interface ProcessedCategory {
   id: string;
   name: string; // Akan berisi "Induk > Anak"
-  isChild: boolean;
 }
 
+// --- LOGIKA BARU DI FUNGSI INI ---
 // Helper function untuk memproses kategori
 function processCategories(categories: Category[]): ProcessedCategory[] {
-  const categoryMap = new Map(categories.map((cat) => [cat.id, cat]));
-  const processed: ProcessedCategory[] = [];
-
+  // 1. Buat Map untuk mencari nama kategori berdasarkan ID
+  const categoryMap = new Map(categories.map((cat) => [cat.id, cat.name]));
+  
+  // 2. Buat Set (daftar unik) dari semua ID yang merupakan 'parent_id'
+  //    Ini adalah semua kategori yang memiliki anak (kategori Induk)
+  const parentIds = new Set<string>();
   for (const cat of categories) {
-    // Jika ini adalah kategori induk (tidak punya parent_id)
-    if (!cat.parent_id) {
-      processed.push({ id: cat.id, name: cat.name, isChild: false });
-
-      // Cari semua anaknya
-      for (const child of categories) {
-        if (child.parent_id === cat.id) {
-          processed.push({
-            id: child.id,
-            name: `${cat.name} > ${child.name}`, // Format: "Induk > Anak"
-            isChild: true,
-          });
-        }
-      }
+    if (cat.parent_id) {
+      parentIds.add(cat.parent_id);
     }
   }
 
-  // Jika Anda hanya ingin menampilkan sub-kategori (paling spesifik)
-  // return processed.filter(cat => cat.isChild);
-  
-  // Untuk sekarang, kita tampilkan semua agar admin bisa memilih
+  const processed: ProcessedCategory[] = [];
+
+  // 3. Iterasi semua kategori
+  for (const cat of categories) {
+    // 4. HANYA tampilkan kategori yang BUKAN merupakan induk
+    //    (ID-nya tidak ada di dalam Set parentIds)
+    if (!parentIds.has(cat.id)) {
+      let displayName = cat.name;
+      
+      // 5. Jika dia kategori "daun" TAPI punya induk, buat format "Induk > Anak"
+      if (cat.parent_id) {
+        const parentName = categoryMap.get(cat.parent_id);
+        if (parentName) {
+          displayName = `${parentName} > ${cat.name}`;
+        }
+      }
+      // Jika dia kategori "daun" TAPI tidak punya induk (misal: kategori tunggal)
+      // maka 'displayName' akan tetap nama aslinya.
+
+      processed.push({
+        id: cat.id,
+        name: displayName,
+      });
+    }
+  }
+
+  // 6. Urutkan berdasarkan nama untuk tampilan yang rapi
   return processed.sort((a, b) => a.name.localeCompare(b.name));
 }
-// --- BATAS TAMBAHAN ---
+// --- BATAS PERUBAHAN LOGIKA ---
 
 interface ProductFormDialogProps {
   isOpen: boolean;
@@ -96,7 +109,7 @@ export function ProductFormDialog({
   );
 
   // Proses kategori untuk dropdown
-  const processedCategories = processCategories(categories);
+  const processedCategories = processCategories(categories); // Memanggil fungsi baru
 
   const initialState: FormState = { success: false, message: '' };
   const [state, formAction] = useFormState(upsertProduct, initialState);
@@ -164,21 +177,19 @@ export function ProductFormDialog({
             <Label htmlFor="category_id">Kategori</Label>
             <Select
               name="category_id"
-              // Set default value, jika null/undefined, placeholder akan tampil
               defaultValue={product?.category_id || undefined}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Pilih kategori" />
               </SelectTrigger>
               <SelectContent>
-                {/* --- PERUBAHAN DI SINI --- */}
-                {/* Kita map dari 'processedCategories' sekarang */}
+                {/* --- Map dari 'processedCategories' yang sudah difilter --- */}
                 {processedCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>
                 ))}
-                {/* --- BATAS PERUBAHAN --- */}
+                {/* --- Batas Perubahan --- */}
               </SelectContent>
             </Select>
             {state.errors?.category_id && (

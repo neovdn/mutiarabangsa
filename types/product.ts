@@ -6,6 +6,7 @@ export interface Category {
   name: string;
   description: string | null;
   created_at: string;
+  parent_id: string | null; // <-- TAMBAHKAN BARIS INI
 }
 
 // Berdasarkan tabel public.product_variants

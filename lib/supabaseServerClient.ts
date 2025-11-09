@@ -1,3 +1,5 @@
+// lib/supabaseServerClient.ts
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -13,9 +15,23 @@ export function createSupabaseServerClient() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        // Kita tidak perlu set/remove di server action, jadi bisa dikosongkan
-        set(name: string, value: string, options: CookieOptions) {},
-        remove(name: string, options: CookieOptions) {},
+        // --- PERBAIKAN DI BAWAH INI ---
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // Tangani error jika cookies dimaksudkan untuk dibaca saja
+            // (misalnya dalam Next.js App Router route handlers)
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // Tangani error jika cookies dimaksudkan untuk dibaca saja
+          }
+        },
+        // --- BATAS PERBAIKAN ---
       },
     }
   );

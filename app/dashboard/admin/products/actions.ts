@@ -59,6 +59,8 @@ export async function upsertProduct(
   // Buat client server DI DALAM server action
   const supabase = createSupabaseServerClient();
 
+  await supabase.auth.getSession();
+  
   const validatedFields = productSchema.safeParse({
     name: formData.get('name'),
     description: formData.get('description'),

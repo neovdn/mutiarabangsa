@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import type { Profile } from '@/types/user';
 import AdminNavbar from '@/components/AdminNavbar'; // Memanggil Navbar baru
 
@@ -12,6 +12,7 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 

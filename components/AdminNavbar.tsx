@@ -19,7 +19,7 @@ import {
   Warehouse,  // <-- Icon baru untuk Stok
   Store,      // <-- Icon baru untuk Toko
 } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -96,6 +96,7 @@ const getInitials = (name: string) => {
 
 export default function AdminNavbar({ userName }: AdminNavbarProps) {
   const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 

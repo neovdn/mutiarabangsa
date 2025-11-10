@@ -1,5 +1,4 @@
 // lib/supabaseServerClient.ts
-
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -7,23 +6,20 @@ export function createSupabaseServerClient() {
   const cookieStore = cookies();
 
   return createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!, // <-- KEMBALIKAN KE NEXT_PUBLIC_
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // <-- KEMBALIKAN KE NEXT_PUBLIC_
     {
       cookies: {
-        // Implementasi 'getAll' yang baru
+        // ... (sisanya sudah benar)
         getAll() {
           return cookieStore.getAll();
         },
-        // Implementasi 'setAll' yang baru
         setAll(cookiesToSet) {
-          // 'cookiesToSet' adalah array, kita perlu loop dan set satu per satu
           cookiesToSet.forEach(({ name, value, options }) => {
             try {
               cookieStore.set(name, value, options);
             } catch (error) {
-              // Tangani error jika terjadi (misalnya, di Route Handler yang read-only)
-              // Untuk Server Action, ini seharusnya aman.
+              // ...
             }
           });
         },

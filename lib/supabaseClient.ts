@@ -1,6 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+// lib/supabaseClient.ts
+// HAPUS SEMUA ISI LAMA DAN GANTI DENGAN INI:
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { createBrowserClient } from '@supabase/ssr';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Fungsi ini membuat instance client untuk sisi browser.
+// Ini akan secara otomatis mengelola sesi menggunakan cookies.
+export function createSupabaseBrowserClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}

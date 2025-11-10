@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { supabase } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 
 // Helper component untuk list fitur di sisi kiri
@@ -23,6 +23,7 @@ const FeatureItem = ({ text }: { text: string }) => (
 
 export default function LoginPage() {
   const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

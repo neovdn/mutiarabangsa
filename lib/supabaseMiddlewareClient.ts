@@ -1,23 +1,24 @@
+// lib/supabaseMiddlewareClient.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { type NextRequest, type NextResponse } from 'next/server';
 
-// Ini adalah fungsi khusus yang dirancang untuk berjalan HANYA di Middleware
 export function createSupabaseMiddlewareClient(
   request: NextRequest,
   response: NextResponse
 ) {
   return createServerClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!, // <-- KEMBALIKAN KE NEXT_PUBLIC_
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, // <-- KEMBALIKAN KE NEXT_PUBLIC_
     {
       cookies: {
+        // ... (sisanya sudah benar)
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value); // <-- Update request
-            response.cookies.set(name, value, options); // <-- Update response
+            request.cookies.set(name, value); 
+            response.cookies.set(name, value, options);
           });
         },
       },

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
@@ -19,7 +19,8 @@ interface SidebarProps {
 
 export default function Sidebar({ userName, menuItems }: SidebarProps) {
   const router = useRouter();
-
+  const supabase = createSupabaseBrowserClient();
+  
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');

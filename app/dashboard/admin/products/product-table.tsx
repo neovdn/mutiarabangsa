@@ -26,15 +26,15 @@ interface ProductTableProps {
   products: ProductWithDetails[];
   onEdit: (product: ProductWithDetails) => void;
   // onManageVariants: (product: ProductWithDetails) => void;
-  // onDelete: (product: ProductWithDetails) => void;
+  onDelete: (product: ProductWithDetails) => void; // <-- TAMBAHKAN INI
 }
 
 export function ProductTable({
   products,
   onEdit,
-}: // onManageVariants,
-// onDelete,
-ProductTableProps) {
+  // onManageVariants,
+  onDelete, // <-- TAMBAHKAN INI
+}: ProductTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -78,8 +78,12 @@ ProductTableProps) {
         <TableBody>
           {products.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-500 py-10">
-                Belum ada produk.
+              <TableCell
+                colSpan={6}
+                className="text-center text-gray-500 py-10"
+              >
+                {/* Ubah pesan agar lebih relevan dengan filter */}
+                Tidak ada produk yang cocok.
               </TableCell>
             </TableRow>
           ) : (
@@ -111,7 +115,7 @@ ProductTableProps) {
                     {stockInfo.total}
                     {stockInfo.needsRestock && (
                       <Badge variant="destructive" className="ml-2">
-                        Restock Needed
+                        Stok Rendah
                       </Badge>
                     )}
                   </TableCell>
@@ -138,9 +142,7 @@ ProductTableProps) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() =>
-                            alert('Fitur "Delete" belum dibuat')
-                          }
+                          onClick={() => onDelete(product)} // <-- GANTI ALERT DENGAN INI
                         >
                           Hapus Produk
                         </DropdownMenuItem>

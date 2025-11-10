@@ -3,7 +3,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-// Fungsi ini akan membuat client yang memiliki sesi pengguna yang sedang login
 export function createSupabaseServerClient() {
   const cookieStore = cookies();
 
@@ -15,21 +14,12 @@ export function createSupabaseServerClient() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        // --- PERBAIKAN DI BAWAH INI ---
+        // --- PERBAIKAN DI BAWAH INI (HAPUS TRY/CATCH) ---
         set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // Tangani error jika cookies dimaksudkan untuk dibaca saja
-            // (misalnya dalam Next.js App Router route handlers)
-          }
+          cookieStore.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
-            // Tangani error jika cookies dimaksudkan untuk dibaca saja
-          }
+          cookieStore.set({ name, value: '', ...options });
         },
         // --- BATAS PERBAIKAN ---
       },

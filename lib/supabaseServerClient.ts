@@ -11,17 +11,22 @@ export function createSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        // Implementasi 'getAll' yang baru
+        getAll() {
+          return cookieStore.getAll();
         },
-        // --- PERBAIKAN DI BAWAH INI (HAPUS TRY/CATCH) ---
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
+        // Implementasi 'setAll' yang baru
+        setAll(cookiesToSet) {
+          // 'cookiesToSet' adalah array, kita perlu loop dan set satu per satu
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              cookieStore.set(name, value, options);
+            } catch (error) {
+              // Tangani error jika terjadi (misalnya, di Route Handler yang read-only)
+              // Untuk Server Action, ini seharusnya aman.
+            }
+          });
         },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options });
-        },
-        // --- BATAS PERBAIKAN ---
       },
     }
   );

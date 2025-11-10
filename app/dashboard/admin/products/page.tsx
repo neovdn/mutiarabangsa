@@ -3,13 +3,16 @@
  * Deskripsi: Diubah menjadi Server Component untuk fetch data awal
  * dan menampilkan komponen client untuk interaktivitas.
  */
-import { supabase } from '@/lib/supabaseClient';
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { ProductClient } from './product-client';
 import { ProductWithDetails, Category } from '@/types/product';
 import { Toaster } from '@/components/ui/toaster';
 
+export const dynamic = 'force-dynamic';
+
 // Fungsi untuk mengambil data dari Supabase
 async function getProducts(): Promise<ProductWithDetails[]> {
+  const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('products')
     .select('*, categories(*), product_variants(*)')
@@ -23,6 +26,7 @@ async function getProducts(): Promise<ProductWithDetails[]> {
 }
 
 async function getCategories(): Promise<Category[]> {
+  const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('categories')
     .select('*')

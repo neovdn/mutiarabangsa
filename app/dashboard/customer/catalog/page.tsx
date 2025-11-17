@@ -1,10 +1,51 @@
-'use client';
+/*
+ * File: app/dashboard/customer/catalog/page.tsx
+ * Deskripsi: Server Component untuk mengambil data produk & kategori
+ * dan meneruskannya ke client component.
+ */
 
-import SearchBar from '@/components/SearchBar';
-import { Store } from 'lucide-react';
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
+import { ProductWithDetails, Category } from '@/types/product';
+import { Toaster } from '@/components/ui/toaster';
+import { CatalogClient } from './catalog-client';
 
-export default function CustomerCatalogPage() {
-  // Ini adalah konten dari file app/dashboard/customer/page.tsx Anda sebelumnya
+export const dynamic = 'force-dynamic';
+
+// Fungsi untuk mengambil data produk lengkap
+async function getProducts(): Promise<ProductWithDetails[]> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, categories(*), product_variants(*)') // Ambil relasi
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching products:', error.message);
+    return [];
+  }
+  return data as ProductWithDetails[];
+}
+
+// Fungsi untuk mengambil kategori (untuk filter)
+async function getCategories(): Promise<Category[]> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching categories:', error.message);
+    return [];
+  }
+  return data as Category[];
+}
+
+export default async function CustomerCatalogPage() {
+  // Fetch data di server
+  const products = await getProducts();
+  const categories = await getCategories();
+
   return (
     <>
       <div className="mb-8">
@@ -14,24 +55,9 @@ export default function CustomerCatalogPage() {
         </p>
       </div>
 
-      <div className="mb-8">
-        <SearchBar />
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <div className="max-w-md mx-auto">
-          <div className="bg-gradient-to-br from-cyan-100 to-magenta-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-            <Store className="h-12 w-12 text-black" />
-          </div>
-          <h3 className="text-2xl font-semibold text-black mb-3">
-            Selamat Berbelanja!
-          </h3>
-          <p className="text-gray-600 leading-relaxed">
-            Gunakan menu di navbar untuk menjelajahi katalog produk, mengelola
-            keranjang belanja, dan melihat riwayat pesanan Anda.
-          </p>
-        </div>
-      </div>
+      {/* Render komponen client untuk interaktivitas */}
+      <CatalogClient initialProducts={products} categories={categories} />
+      <Toaster />
     </>
   );
 }

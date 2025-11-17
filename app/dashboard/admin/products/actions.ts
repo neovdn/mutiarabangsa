@@ -172,10 +172,9 @@ export async function deleteProduct(productId: string): Promise<FormState> {
     // ...
 
     revalidatePath('/dashboard/admin/products');
+    revalidatePath('/dashboard/admin/stock'); // Revalidasi stok juga
     return { success: true, message: 'Produk berhasil dihapus.' };
   } catch (e: any) {
-    // --- PERBAIKAN DI SINI ---
-    // Mengganti `false` menjadi `success: false`
     return { success: false, message: `Gagal menghapus produk: ${e.message}` };
   }
 }

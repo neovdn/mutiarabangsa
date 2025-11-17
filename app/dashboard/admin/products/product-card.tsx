@@ -53,13 +53,14 @@ interface ProductCardProps {
   product: ProductWithDetails;
   onEdit: (product: ProductWithDetails) => void;
   onDelete: (product: ProductWithDetails) => void;
-  // onManageVariants: (product: ProductWithDetails) => void; // Untuk nanti
+  onManageVariants: (product: ProductWithDetails) => void; // <-- Prop ini tetap ada
 }
 
 export function ProductCard({
   product,
   onEdit,
   onDelete,
+  onManageVariants, // <-- Prop ini tetap ada
 }: ProductCardProps) {
   const stockInfo = getStockInfo(product.product_variants);
 
@@ -85,14 +86,14 @@ export function ProductCard({
                 Edit Produk
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => alert('Fitur "Manage Variants" belum dibuat')}
+                onClick={() => onManageVariants(product)} // <-- Tetap sama, fungsinya diubah di client
               >
                 Kelola Varian/Stok
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600"
-                onClick={() => onDelete(product)} // <-- Panggil fungsi onDelete
+                onClick={() => onDelete(product)}
               >
                 Hapus Produk
               </DropdownMenuItem>
@@ -112,7 +113,6 @@ export function ProductCard({
       </CardHeader>
 
       {/* Konten (Nama, Kategori, Harga) */}
-      {/* --- PENYESUAIAN PADDING & FONT --- */}
       <CardContent className="p-3 flex-1">
         {product.categories ? (
           <Badge variant="secondary" className="mb-2">
@@ -122,7 +122,7 @@ export function ProductCard({
           <div className="h-6 mb-2" /> // Placeholder agar tinggi sama
         )}
         <CardTitle
-          className="text-base font-semibold leading-tight line-clamp-2" // <-- diubah dari text-lg
+          className="text-base font-semibold leading-tight line-clamp-2"
           title={product.name}
         >
           {product.name}
@@ -134,7 +134,6 @@ export function ProductCard({
 
       {/* Footer (Stok) */}
       <CardFooter className="p-3 pt-0">
-        {/* --- PENYESUAIAN PADDING --- */}
         <div className="flex justify-between items-center w-full">
           <span className="text-sm text-gray-500">
             Total Stok: {stockInfo.total}

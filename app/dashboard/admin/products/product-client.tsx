@@ -1,20 +1,21 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
+// Hapus 'List' dan 'Grid' jika tombol ganti view tidak jadi dipakai
 import { Plus, List, Grid, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductTable } from './product-table';
 import { ProductFormDialog } from './product-form';
 import { Category, ProductWithDetails } from '@/types/product';
-import { ProductGrid } from './product-grid'; // <-- Impor komponen grid baru
-import { Input } from '@/components/ui/input'; // <-- Ganti SearchBar dengan Input
+import { ProductGrid } from './product-grid';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'; // <-- Impor Select untuk filter
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +25,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'; // <-- Impor Alert Dialog
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteProduct } from './actions'; // <-- Impor server action
+import { deleteProduct } from './actions';
 import { useRouter } from 'next/navigation';
+// --- HAPUS IMPORT DIALOG VARIAN LAMA ---
+// import { VariantStockDialog } from './variant-stock-dialog';
 
 interface ProductClientProps {
   initialProducts: ProductWithDetails[];
@@ -43,6 +46,8 @@ export function ProductClient({
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithDetails | null>(null);
 
+  // --- HAPUS STATE UNTUK DIALOG VARIAN LAMA ---
+  
   // State untuk Delete Dialog
   const [productToDelete, setProductToDelete] =
     useState<ProductWithDetails | null>(null);
@@ -55,7 +60,7 @@ export function ProductClient({
   const [filterCategory, setFilterCategory] = useState('all');
 
   // State untuk ganti view
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // Default ke grid
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Logika untuk memfilter produk
   const filteredProducts = useMemo(() => {
@@ -80,12 +85,18 @@ export function ProductClient({
     setIsFormOpen(true);
   };
 
+  // --- MODIFIKASI HANDLER INI ---
+  const handleManageVariants = (product: ProductWithDetails) => {
+    // Arahkan ke halaman stok dengan nama produk sebagai query pencarian
+    router.push(
+      `/dashboard/admin/stock?search=${encodeURIComponent(product.name)}`,
+    );
+  };
+
   // Handler untuk menutup dialog form
   const onFormSubmit = () => {
     setIsFormOpen(false);
     setSelectedProduct(null);
-    // Kita tidak perlu fetch ulang, `revalidatePath` di server action
-    // akan memicu Next.js untuk me-render ulang `page.tsx`
   };
 
   // Handler untuk konfirmasi hapus
@@ -100,7 +111,6 @@ export function ProductClient({
           description: result.message,
         });
         setProductToDelete(null);
-        // Refresh data di sisi server
         router.refresh();
       } else {
         toast({
@@ -124,7 +134,7 @@ export function ProductClient({
             <Input
               type="text"
               placeholder="Cari produk..."
-              className="pl-10 py-3" // Sesuaikan padding
+              className="pl-10 py-3"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -180,13 +190,15 @@ export function ProductClient({
           <ProductGrid
             products={filteredProducts}
             onEdit={handleEditProduct}
-            onDelete={setProductToDelete} // Buka dialog konfirmasi
+            onDelete={setProductToDelete}
+            onManageVariants={handleManageVariants} // <-- Handler yang baru
           />
         ) : (
           <ProductTable
             products={filteredProducts}
             onEdit={handleEditProduct}
-            onDelete={setProductToDelete} // Buka dialog konfirmasi
+            onDelete={setProductToDelete}
+            onManageVariants={handleManageVariants} // <-- Handler yang baru
           />
         )}
       </div>
@@ -199,6 +211,8 @@ export function ProductClient({
         categories={categories}
         onFormSubmit={onFormSubmit}
       />
+
+      {/* --- HAPUS RENDER DIALOG VARIAN LAMA --- */}
 
       {/* Dialog Konfirmasi Hapus */}
       <AlertDialog

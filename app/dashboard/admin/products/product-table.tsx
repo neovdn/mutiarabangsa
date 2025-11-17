@@ -25,15 +25,15 @@ import { ProductWithDetails } from '@/types/product';
 interface ProductTableProps {
   products: ProductWithDetails[];
   onEdit: (product: ProductWithDetails) => void;
-  // onManageVariants: (product: ProductWithDetails) => void;
-  onDelete: (product: ProductWithDetails) => void; // <-- TAMBAHKAN INI
+  onManageVariants: (product: ProductWithDetails) => void; // <-- Prop ini tetap ada
+  onDelete: (product: ProductWithDetails) => void;
 }
 
 export function ProductTable({
   products,
   onEdit,
-  // onManageVariants,
-  onDelete, // <-- TAMBAHKAN INI
+  onManageVariants, // <-- Prop ini tetap ada
+  onDelete,
 }: ProductTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -49,7 +49,7 @@ export function ProductTable({
     }
 
     const total = variants.reduce((sum, v) => sum + v.stock, 0);
-    const needsRestock = variants.some((v) => v.stock < 10); // Sesuai use case "stok rendah"
+    const needsRestock = variants.some((v) => v.stock < 10);
 
     const prices = variants.map((v) => v.price);
     const minPrice = Math.min(...prices);
@@ -82,7 +82,6 @@ export function ProductTable({
                 colSpan={6}
                 className="text-center text-gray-500 py-10"
               >
-                {/* Ubah pesan agar lebih relevan dengan filter */}
                 Tidak ada produk yang cocok.
               </TableCell>
             </TableRow>
@@ -93,7 +92,7 @@ export function ProductTable({
                 <TableRow key={product.id}>
                   <TableCell>
                     <Image
-                      src={product.image_url || '/img/placeholder.png'} // Sediakan placeholder
+                      src={product.image_url || '/img/placeholder.png'}
                       alt={product.name}
                       width={48}
                       height={48}
@@ -133,16 +132,14 @@ export function ProductTable({
                           Edit Produk
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() =>
-                            alert('Fitur "Manage Variants" belum dibuat')
-                          }
+                          onClick={() => onManageVariants(product)} // <-- Tetap sama, fungsinya diubah di client
                         >
                           Kelola Varian/Stok
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => onDelete(product)} // <-- GANTI ALERT DENGAN INI
+                          onClick={() => onDelete(product)}
                         >
                           Hapus Produk
                         </DropdownMenuItem>

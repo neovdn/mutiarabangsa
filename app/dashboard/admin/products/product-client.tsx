@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
-// Hapus 'List' dan 'Grid' jika tombol ganti view tidak jadi dipakai
 import { Plus, List, Grid, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductTable } from './product-table';
@@ -29,8 +28,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { deleteProduct } from './actions';
 import { useRouter } from 'next/navigation';
-// --- HAPUS IMPORT DIALOG VARIAN LAMA ---
-// import { VariantStockDialog } from './variant-stock-dialog';
 
 interface ProductClientProps {
   initialProducts: ProductWithDetails[];
@@ -46,8 +43,6 @@ export function ProductClient({
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithDetails | null>(null);
 
-  // --- HAPUS STATE UNTUK DIALOG VARIAN LAMA ---
-  
   // State untuk Delete Dialog
   const [productToDelete, setProductToDelete] =
     useState<ProductWithDetails | null>(null);
@@ -62,7 +57,6 @@ export function ProductClient({
   // State untuk ganti view
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Logika untuk memfilter produk
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       const nameMatch = product.name
@@ -74,7 +68,6 @@ export function ProductClient({
     });
   }, [initialProducts, searchTerm, filterCategory]);
 
-  // Handler untuk membuka dialog
   const handleAddProduct = () => {
     setSelectedProduct(null);
     setIsFormOpen(true);
@@ -87,19 +80,20 @@ export function ProductClient({
 
   // --- MODIFIKASI HANDLER INI ---
   const handleManageVariants = (product: ProductWithDetails) => {
-    // Arahkan ke halaman stok dengan nama produk sebagai query pencarian
+    // Arahkan ke halaman stok dengan nama produk sebagai query pencarian DAN query judul
     router.push(
-      `/dashboard/admin/stock?search=${encodeURIComponent(product.name)}`,
+      `/dashboard/admin/stock?search=${encodeURIComponent(
+        product.name,
+      )}&productName=${encodeURIComponent(product.name)}`,
     );
   };
+  // --- BATAS MODIFIKASI ---
 
-  // Handler untuk menutup dialog form
   const onFormSubmit = () => {
     setIsFormOpen(false);
     setSelectedProduct(null);
   };
 
-  // Handler untuk konfirmasi hapus
   const handleDeleteConfirm = () => {
     if (!productToDelete) return;
 
@@ -191,14 +185,14 @@ export function ProductClient({
             products={filteredProducts}
             onEdit={handleEditProduct}
             onDelete={setProductToDelete}
-            onManageVariants={handleManageVariants} // <-- Handler yang baru
+            onManageVariants={handleManageVariants}
           />
         ) : (
           <ProductTable
             products={filteredProducts}
             onEdit={handleEditProduct}
             onDelete={setProductToDelete}
-            onManageVariants={handleManageVariants} // <-- Handler yang baru
+            onManageVariants={handleManageVariants}
           />
         )}
       </div>
@@ -211,8 +205,6 @@ export function ProductClient({
         categories={categories}
         onFormSubmit={onFormSubmit}
       />
-
-      {/* --- HAPUS RENDER DIALOG VARIAN LAMA --- */}
 
       {/* Dialog Konfirmasi Hapus */}
       <AlertDialog

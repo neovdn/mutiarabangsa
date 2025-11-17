@@ -64,11 +64,15 @@ function StockClientContent({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  // State untuk Filter
+  // --- LOGIKA BARU UNTUK SEARCH & HEADER ---
   // Ambil query pencarian dari URL (jika ada)
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get('search') || '',
-  );
+  const initialSearch = searchParams.get('search') || '';
+  // Ambil nama produk dari URL untuk header
+  const productName = searchParams.get('productName');
+  
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  // --- BATAS LOGIKA BARU ---
+
   const [filterCategory, setFilterCategory] = useState('all');
 
   // State untuk Dialog
@@ -105,6 +109,30 @@ function StockClientContent({
       return searchMatch && categoryMatch;
     });
   }, [initialVariants, searchTerm, filterCategory]);
+
+  // --- HANDLER BARU UNTUK SEARCH INPUT ---
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+
+    // Update URL params
+    const params = new URLSearchParams(searchParams.toString()); // Salin params yang ada
+    if (newSearchTerm) {
+      params.set('search', newSearchTerm);
+    } else {
+      params.delete('search');
+    }
+    
+    // Jika pengguna mengetik, hapus konteks 'productName'
+    // agar judul kembali normal
+    if (params.has('productName')) {
+      params.delete('productName');
+    }
+
+    // Ganti URL tanpa navigasi (hanya update params)
+    router.replace(`/dashboard/admin/stock?${params.toString()}`);
+  };
+  // --- BATAS HANDLER BARU ---
 
   // Handlers untuk membuka dialog
   const handleAddVariant = () => {
@@ -150,6 +178,21 @@ function StockClientContent({
 
   return (
     <div className="space-y-6">
+      {/* --- HEADER DINAMIS BARU --- */}
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-black mb-2">
+          {productName
+            ? `Kelola Stok: ${productName}`
+            : 'Kelola Stok Barang'}
+        </h2>
+        <p className="text-gray-600">
+          {productName
+            ? `Atur varian, harga, dan stok untuk produk ${productName}.`
+            : 'Pantau, tambah, edit, dan perbarui ketersediaan stok produk Anda.'}
+        </p>
+      </div>
+      {/* --- BATAS HEADER DINAMIS --- */}
+
       {/* BAR UNTUK FILTER, SEARCH, DAN AKSI */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         {/* Search & Filter */}
@@ -162,7 +205,7 @@ function StockClientContent({
               placeholder="Cari produk, ukuran, kategori, SKU..."
               className="pl-10 py-3"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange} // <-- Gunakan handler baru
             />
           </div>
 
@@ -203,7 +246,7 @@ function StockClientContent({
       <VariantFormDialog
         isOpen={isVariantFormOpen}
         onOpenChange={setIsVariantFormOpen}
-        // @ts-ignore - Tipe sudah sesuai, 'products' akan ada
+        // @ts-ignore
         variant={selectedVariant}
         allProducts={allProducts}
       />
@@ -212,7 +255,7 @@ function StockClientContent({
       <AdjustStockDialog
         isOpen={isAdjustStockOpen}
         onOpenChange={setIsAdjustStockOpen}
-        // @ts-ignore - Tipe sudah sesuai, 'products' akan ada
+        // @ts-ignore
         variant={selectedVariant}
       />
 
@@ -251,7 +294,8 @@ function StockClientContent({
 // Wrapper Suspense untuk useSearchParams
 export function StockClient(props: StockClientProps) {
   return (
-    <Suspense fallback={<div>Memuat filter...</div>}>
+    // <Suspense> diperlukan karena kita menggunakan useSearchParams
+    <Suspense>
       <StockClientContent {...props} />
     </Suspense>
   );

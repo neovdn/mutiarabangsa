@@ -1,10 +1,9 @@
 /*
  * File dimodifikasi: app/dashboard/admin/stock/page.tsx
- * Deskripsi: Diubah menjadi Server Component untuk fetch data stok
- * dan menampilkan komponen client untuk filtering.
+ * Deskripsi: Memastikan query select mengambil semua ID yang diperlukan.
  */
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
-import { StockClient, VariantWithProduct } from './stock-client';
+import { StockClient, VariantWithProduct } from './stock-client'; // <-- Impor tipe baru
 import { Toaster } from '@/components/ui/toaster';
 import { Category } from '@/types/product';
 
@@ -25,8 +24,10 @@ async function getStockData(): Promise<VariantWithProduct[]> {
       `
       *,
       products (
+        id, 
         name,
         categories (
+          id, 
           name
         )
       )
@@ -82,14 +83,7 @@ export default async function AdminStockPage() {
 
   return (
     <>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2">Kelola Stok Barang</h2>
-        <p className="text-gray-600">
-          Pantau, tambah, edit, dan perbarui ketersediaan stok produk Anda.
-        </p>
-      </div>
-
-      {/* Render komponen client untuk tabel dan dialog interaktif */}
+      {/* Header sekarang dirender di dalam StockClient */}
       <StockClient
         initialVariants={variants}
         allProducts={allProducts}

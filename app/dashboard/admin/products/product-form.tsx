@@ -6,6 +6,7 @@ import { useFormState, useFormStatus } from 'react-dom';
 import { upsertProduct, FormState } from './actions';
 import { ProductWithDetails, Category } from '@/types/product';
 import { useToast } from '@/hooks/use-toast';
+import { processCategories } from '@/lib/utils';
 
 import {
   Dialog,
@@ -26,58 +27,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-
-// --- Tipe Sederhana (Hanya perlu ID dan Nama) ---
-interface ProcessedCategory {
-  id: string;
-  name: string; // Akan berisi "Induk > Anak"
-}
-
-// --- LOGIKA BARU DI FUNGSI INI ---
-// Helper function untuk memproses kategori
-function processCategories(categories: Category[]): ProcessedCategory[] {
-  // 1. Buat Map untuk mencari nama kategori berdasarkan ID
-  const categoryMap = new Map(categories.map((cat) => [cat.id, cat.name]));
-  
-  // 2. Buat Set (daftar unik) dari semua ID yang merupakan 'parent_id'
-  //    Ini adalah semua kategori yang memiliki anak (kategori Induk)
-  const parentIds = new Set<string>();
-  for (const cat of categories) {
-    if (cat.parent_id) {
-      parentIds.add(cat.parent_id);
-    }
-  }
-
-  const processed: ProcessedCategory[] = [];
-
-  // 3. Iterasi semua kategori
-  for (const cat of categories) {
-    // 4. HANYA tampilkan kategori yang BUKAN merupakan induk
-    //    (ID-nya tidak ada di dalam Set parentIds)
-    if (!parentIds.has(cat.id)) {
-      let displayName = cat.name;
-      
-      // 5. Jika dia kategori "daun" TAPI punya induk, buat format "Induk > Anak"
-      if (cat.parent_id) {
-        const parentName = categoryMap.get(cat.parent_id);
-        if (parentName) {
-          displayName = `${parentName} > ${cat.name}`;
-        }
-      }
-      // Jika dia kategori "daun" TAPI tidak punya induk (misal: kategori tunggal)
-      // maka 'displayName' akan tetap nama aslinya.
-
-      processed.push({
-        id: cat.id,
-        name: displayName,
-      });
-    }
-  }
-
-  // 6. Urutkan berdasarkan nama untuk tampilan yang rapi
-  return processed.sort((a, b) => a.name.localeCompare(b.name));
-}
-// --- BATAS PERUBAHAN LOGIKA ---
 
 interface ProductFormDialogProps {
   isOpen: boolean;

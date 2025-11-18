@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CatalogGrid } from './catalog-grid'; // <-- Buat file ini
-import { processCategories } from '@/app/dashboard/admin/products/product-form'; // Kita bisa pakai ulang logic filter kategori admin
+import { processCategories } from '@/lib/utils';
 
 interface CatalogClientProps {
   initialProducts: ProductWithDetails[];

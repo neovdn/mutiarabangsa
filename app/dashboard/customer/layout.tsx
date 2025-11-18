@@ -15,6 +15,10 @@ export default function CustomerDashboardLayout({
   const supabase = createSupabaseBrowserClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // --- STATE BARU UNTUK JUMLAH ITEM KERANJANG ---
+  const [cartCount, setCartCount] = useState<number | null>(null);
+  // ------------------------------------------
 
   // Logika otentikasi terpusat
   useEffect(() => {
@@ -39,21 +43,38 @@ export default function CustomerDashboardLayout({
         return;
       }
 
-      // Melindungi rute customer
       if (profileData.role !== 'customer') {
-        // Jika admin, lempar ke dashboard admin
         router.push('/dashboard/admin');
         return;
       }
 
       setProfile(profileData);
+
+      // --- LOGIC BARU: AMBIL JUMLAH KERANJANG ---
+      const fetchCartCount = async (userId: string) => {
+        // Kita hanya butuh hitungan, jadi 'head: true' lebih efisien
+        const { count, error: countError } = await supabase
+          .from('cart_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId);
+
+        if (countError) {
+          console.error('Error fetching cart count:', countError.message);
+          setCartCount(0); // Set 0 jika error
+        } else {
+          setCartCount(count ?? 0);
+        }
+      };
+
+      fetchCartCount(profileData.id);
+      // --- BATAS LOGIC BARU ---
+
       setLoading(false);
     };
 
     checkAuth();
   }, [router, supabase]); // Menambahkan supabase ke dependency array
 
-  // Menampilkan loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -65,10 +86,14 @@ export default function CustomerDashboardLayout({
     );
   }
 
-  // Render layout persisten
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <CustomerNavbar userName={profile?.full_name || 'Customer'} />
+      {/* --- KIRIM cartCount SEBAGAI PROP --- */}
+      <CustomerNavbar
+        userName={profile?.full_name || 'Customer'}
+        cartCount={cartCount}
+      />
+      {/* ---------------------------------- */}
       <main className="flex-1 overflow-auto p-8">{children}</main>
     </div>
   );

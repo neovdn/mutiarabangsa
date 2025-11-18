@@ -1,13 +1,14 @@
 'use client';
 
 import { ProductWithDetails } from '@/types/product';
-import { ProductCard } from './product-card'; // <-- Buat file ini
+import { ProductCard } from './product-card';
 
 interface CatalogGridProps {
   products: ProductWithDetails[];
+  onAddToCart: (product: ProductWithDetails) => void; // <-- Prop baru
 }
 
-export function CatalogGrid({ products }: CatalogGridProps) {
+export function CatalogGrid({ products, onAddToCart }: CatalogGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
       {products.length === 0 ? (
@@ -19,7 +20,7 @@ export function CatalogGrid({ products }: CatalogGridProps) {
           <ProductCard
             key={product.id}
             product={product}
-            // Tidak ada prop onEdit, onDelete, onManageVariants
+            onAddToCart={onAddToCart} // <-- Teruskan prop
           />
         ))
       )}

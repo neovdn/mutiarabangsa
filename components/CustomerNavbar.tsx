@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LogOut,
-  LayoutDashboard, // <-- TAMBAHKAN INI
+  LayoutDashboard,
   Store,
   ShoppingCart,
   History,
@@ -34,18 +34,19 @@ import { useState } from 'react';
 
 interface CustomerNavbarProps {
   userName: string;
+  cartCount: number | null; // <-- Prop baru
 }
 
-// --- Daftar Link Navigasi Customer (UPDATED) ---
+// ... (navLinks tetap sama)
 const navLinks = [
   {
     label: 'Dashboard',
-    href: '/dashboard/customer', // <-- Link baru
+    href: '/dashboard/customer',
     icon: <LayoutDashboard className="h-4 w-4" />,
   },
   {
     label: 'Katalog',
-    href: '/dashboard/customer/catalog', // <-- Path diubah
+    href: '/dashboard/customer/catalog',
     icon: <Store className="h-4 w-4" />,
   },
   {
@@ -59,16 +60,18 @@ const navLinks = [
     icon: <History className="h-4 w-4" />,
   },
 ];
-// ----------------------------------------
 
-// Helper untuk mendapatkan inisial nama
+// ... (getInitials tetap sama)
 const getInitials = (name: string) => {
   const names = name.split(' ');
   if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
   return (names[0][0] + names[names.length - 1][0]).toUpperCase();
 };
 
-export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
+export default function CustomerNavbar({
+  userName,
+  cartCount, // <-- Terima prop
+}: CustomerNavbarProps) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const pathname = usePathname();
@@ -82,9 +85,10 @@ export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
       <nav className="flex items-center justify-between h-16 px-6">
-        {/* Mobile Menu Trigger (Hanya tampil di mobile) */}
+        {/* Mobile Menu Trigger */}
         <div className="md:hidden flex items-center">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            {/* ... (SheetTrigger, SheetContent, SheetHeader) ... */}
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6" />
@@ -118,6 +122,7 @@ export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
                     onClick={() => setIsSheetOpen(false)}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2 text-base font-medium transition-all hover:bg-gray-100',
+                      'relative', // <-- Tambahkan 'relative'
                       pathname === link.href
                         ? 'bg-cyan text-primary-foreground hover:bg-cyan'
                         : 'text-gray-600 hover:text-black'
@@ -125,11 +130,19 @@ export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
                   >
                     {link.icon}
                     {link.label}
+                    {/* --- BADGE UNTUK MOBILE --- */}
+                    {link.label === 'Keranjang' &&
+                      cartCount !== null &&
+                      cartCount > 0 && (
+                        <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                          {cartCount}
+                        </span>
+                      )}
+                    {/* ------------------------- */}
                   </Link>
                 ))}
               </div>
-              {/* --- Akhir Menu Navigasi Mobile Baru --- */}
-
+              {/* ... (Menu Logout) ... */}
               <div className="absolute bottom-4 left-4 right-4">
                 <Button
                   onClick={handleLogout}
@@ -168,6 +181,7 @@ export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
               size="sm"
               className={cn(
                 'font-medium',
+                'relative', // <-- Tambahkan 'relative'
                 pathname === link.href
                   ? 'bg-cyan text-primary-foreground'
                   : 'text-gray-600 hover:text-black'
@@ -176,6 +190,15 @@ export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
               <Link href={link.href} className="flex items-center gap-2">
                 {link.icon}
                 {link.label}
+                {/* --- BADGE UNTUK DESKTOP --- */}
+                {link.label === 'Keranjang' &&
+                  cartCount !== null &&
+                  cartCount > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                      {cartCount}
+                    </span>
+                  )}
+                {/* --------------------------- */}
               </Link>
             </Button>
           ))}
@@ -184,6 +207,7 @@ export default function CustomerNavbar({ userName }: CustomerNavbarProps) {
 
         {/* User Menu (Sama seperti Admin) */}
         <DropdownMenu>
+          {/* ... (DropdownMenuTrigger, DropdownMenuContent) ... */}
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"

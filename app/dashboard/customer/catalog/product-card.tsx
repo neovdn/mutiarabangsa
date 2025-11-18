@@ -1,3 +1,8 @@
+/*
+ * File dimodifikasi: app/dashboard/customer/catalog/product-card.tsx
+ * Deskripsi: Mengubah status stok menjadi "Tersedia/Habis" dan
+ * tombol "Keranjang" untuk memicu dialog (via prop).
+ */
 'use client';
 
 import Image from 'next/image';
@@ -10,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart } from 'lucide-react'; // <-- Import Ikon Keranjang
+import { ShoppingCart } from 'lucide-react';
 import { ProductWithDetails } from '@/types/product';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
@@ -23,65 +28,50 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Helper untuk info stok dan harga (disesuaikan untuk customer)
+// --- LOGIKA HELPER DIMODIFIKASI ---
 const getStockInfo = (variants: ProductWithDetails['product_variants']) => {
   if (variants.length === 0) {
     return {
-      total: 0,
       isOutOfStock: true,
-      needsRestock: false,
       range: 'Tidak Tersedia',
     };
   }
-  
+
   const total = variants.reduce((sum, v) => sum + v.stock, 0);
   const isOutOfStock = total === 0;
-  // Hanya tampilkan "Stok Rendah" jika tidak habis
-  const needsRestock = !isOutOfStock && variants.some((v) => v.stock < 10);
-  
-  const prices = variants.map((v) => v.price).filter(v => v > 0);
+
+  const prices = variants.map((v) => v.price).filter((v) => v > 0);
 
   if (prices.length === 0) {
-     return { 
-       total: 0, 
-       isOutOfStock: true, 
-       needsRestock: false, 
-       range: 'Tidak Tersedia' 
-     };
+    return {
+      isOutOfStock: true,
+      range: 'Tidak Tersedia',
+    };
   }
 
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
-  
+
   const range =
     minPrice === maxPrice
       ? formatCurrency(minPrice)
       : `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`;
-      
-  return { total, isOutOfStock, needsRestock, range };
+
+  return { isOutOfStock, range };
 };
-// ---
+// --- BATAS MODIFIKASI ---
 
 interface ProductCardProps {
   product: ProductWithDetails;
-  // Tidak ada props admin (onEdit, onDelete, dll)
+  onAddToCart: (product: ProductWithDetails) => void; // <-- Prop baru
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const stockInfo = getStockInfo(product.product_variants);
-
-  const handleAddToCart = () => {
-    // TODO: Implementasi logika Add to Cart
-    // Untuk sekarang, kita buat placeholder
-    alert(`Fitur "Tambah ke Keranjang" untuk ${product.name} segera hadir!`);
-  };
 
   return (
     <Card className="flex flex-col h-full shadow-md transition-all hover:shadow-lg">
       <CardHeader className="p-0 relative">
-        {/* Hapus DropdownMenu (tombol ...) admin */}
-
-        {/* Gambar Produk */}
         <AspectRatio ratio={1 / 1}>
           <Image
             src={product.image_url || '/img/placeholder.png'}
@@ -92,14 +82,13 @@ export function ProductCard({ product }: ProductCardProps) {
         </AspectRatio>
       </CardHeader>
 
-      {/* Konten (Nama, Kategori, Harga) */}
       <CardContent className="p-3 flex-1">
         {product.categories ? (
           <Badge variant="secondary" className="mb-2">
             {product.categories.name}
           </Badge>
         ) : (
-          <div className="h-6 mb-2" /> // Placeholder agar tinggi sama
+          <div className="h-6 mb-2" />
         )}
         <CardTitle
           className="text-base font-semibold leading-tight line-clamp-2"
@@ -112,25 +101,22 @@ export function ProductCard({ product }: ProductCardProps) {
         </p>
       </CardContent>
 
-      {/* Footer (Stok & Tombol Keranjang) */}
       <CardFooter className="p-3 pt-0">
         <div className="flex justify-between items-center w-full gap-2">
-          {/* Tampilan Status Stok */}
+          {/* Tampilan Status Stok (Diganti) */}
           <div>
             {stockInfo.isOutOfStock ? (
-              <Badge variant="destructive">Stok Habis</Badge>
-            ) : stockInfo.needsRestock ? (
-              <Badge variant="destructive">Stok Rendah</Badge>
+              <Badge variant="destructive">Habis</Badge>
             ) : (
-              <span className="text-sm text-gray-500">Stok Tersedia</span>
+              <Badge variant="secondary">Tersedia</Badge>
             )}
           </div>
-          
-          {/* Tombol Aksi Customer */}
+
+          {/* Tombol Aksi Customer (Diganti) */}
           <Button
             size="sm"
             disabled={stockInfo.isOutOfStock} // Disable jika stok habis
-            onClick={handleAddToCart}
+            onClick={() => onAddToCart(product)} // <-- Panggil prop
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
             Keranjang

@@ -1,26 +1,10 @@
 import Image from 'next/image';
 import { ShoppingCart } from 'lucide-react';
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { CartClient } from './cart-client'; // <-- Impor komponen client baru
+import { Suspense } from 'react';
 
-// Definisikan tipe untuk data yang kita fetch
+// Tipe data yang kita fetch
 type CartItemWithDetails = {
   id: string;
   quantity: number;
@@ -34,15 +18,6 @@ type CartItemWithDetails = {
       image_url: string | null;
     } | null;
   } | null;
-};
-
-// Helper format mata uang
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount);
 };
 
 // Fungsi untuk mengambil data keranjang
@@ -88,11 +63,6 @@ async function getCartItems(): Promise<CartItemWithDetails[]> {
 export default async function CustomerCartPage() {
   const cartItems = await getCartItems();
 
-  const subtotal = cartItems.reduce((acc, item) => {
-    const price = item.product_variants?.price || 0;
-    return acc + price * item.quantity;
-  }, 0);
-
   return (
     <>
       <div className="mb-8">
@@ -116,67 +86,11 @@ export default async function CustomerCartPage() {
           </div>
         </div>
       ) : (
-        // Tampilan Keranjang Isi (Minimalis)
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead colSpan={2}>Produk</TableHead>
-                  <TableHead>Jumlah</TableHead>
-                  <TableHead>Harga Satuan</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cartItems.map((item) => {
-                  const variant = item.product_variants;
-                  const product = variant?.products;
-                  const price = variant?.price || 0;
-                  const total = price * item.quantity;
-
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="w-20">
-                        <Image
-                          src={product?.image_url || '/img/placeholder.png'}
-                          alt={product?.name || 'Produk'}
-                          width={64}
-                          height={64}
-                          className="rounded-md object-cover w-16 h-16"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">{product?.name}</p>
-                        <Badge variant="outline">Size: {variant?.size}</Badge>
-                      </TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{formatCurrency(price)}</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(total)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={4} className="text-right font-bold">
-                    Subtotal
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    {formatCurrency(subtotal)}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-          <CardFooter className="flex justify-end p-6">
-            <Button size="lg" disabled>
-              Checkout (Segera Hadir)
-            </Button>
-          </CardFooter>
-        </Card>
+        // Render Client Component dan teruskan data
+        // Suspense dibutuhkan karena CartClient menggunakan useFormState
+        <Suspense>
+          <CartClient cartItems={cartItems} />
+        </Suspense>
       )}
     </>
   );

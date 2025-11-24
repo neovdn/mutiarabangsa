@@ -123,7 +123,7 @@ export async function createOrderFromCart(
   revalidatePath('/dashboard/customer/catalog'); // Stok berubah
   revalidatePath('/dashboard/admin/stock'); // Stok berubah
 
-  redirect(`/dashboard/customer/checkout/success?order_id=${orderId}`);
+  redirect(`/dashboard/customer/orders/${orderId}/payment`);
   
   // Baris ini tidak akan tercapai karena redirect
   // return { success: true, message: 'Pesanan berhasil dibuat!' };

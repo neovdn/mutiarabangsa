@@ -21,10 +21,17 @@ interface TransactionTableProps {
 const statusMap: Record<string, { label: string; color: string }> = {
   pending_payment: { label: 'Belum Bayar', color: 'destructive' },
   waiting_confirmation: { label: 'Menunggu Konfirmasi', color: 'warning' }, 
-  processing: { label: 'Diproses (Siap Kirim)', color: 'default' }, // Update label
+  processing: { label: 'Diproses (Siap Kirim)', color: 'default' },
   shipped: { label: 'Dikirim', color: 'secondary' },
   completed: { label: 'Selesai', color: 'outline' },
   cancelled: { label: 'Batal', color: 'destructive' },
+};
+
+// Helper untuk format metode pembayaran (misal: cod -> COD)
+const formatMethod = (method: string) => {
+  if (!method) return '-';
+  if (method.toLowerCase() === 'cod') return 'COD';
+  return method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 export function TransactionTable({ transactions, onViewDetail }: TransactionTableProps) {
@@ -74,8 +81,8 @@ export function TransactionTable({ transactions, onViewDetail }: TransactionTabl
                     {formatCurrency(trx.total_amount)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize text-xs">
-                      {paymentInfo?.method?.replace('_', ' ') || '-'}
+                    <Badge variant="outline" className="text-xs">
+                      {formatMethod(paymentInfo?.method)}
                     </Badge>
                   </TableCell>
                   <TableCell>

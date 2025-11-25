@@ -17,7 +17,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-6" size="lg" disabled={pending}>
-      {pending ? 'Menyimpan & Memproses...' : 'Bayar Sekarang'}
+      {pending ? 'Memproses Pesanan...' : 'Bayar Sekarang'}
     </Button>
   );
 }
@@ -25,7 +25,8 @@ function SubmitButton() {
 interface PaymentClientProps {
   orderId: string;
   amount: number;
-  initialAddress?: {
+  initialData?: {
+    no_telpon?: string | null;
     address_street?: string | null;
     address_city?: string | null;
     address_province?: string | null;
@@ -33,7 +34,7 @@ interface PaymentClientProps {
   } | null;
 }
 
-export function PaymentClient({ orderId, amount, initialAddress }: PaymentClientProps) {
+export function PaymentClient({ orderId, amount, initialData }: PaymentClientProps) {
   const [method, setMethod] = useState('bank_transfer');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
@@ -49,33 +50,46 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
 
   return (
     <form action={formAction} className="space-y-6">
-      {/* Hidden Inputs untuk ID dan Amount */}
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="amount" value={amount} />
 
-      {/* --- CARD 1: ALAMAT PENGIRIMAN --- */}
+      {/* --- CARD 1: ALAMAT & KONTAK PENGIRIMAN --- */}
       <Card className="border shadow-sm">
         <CardHeader className="pb-3 border-b bg-gray-50/40">
           <CardTitle className="text-base font-semibold flex items-center gap-2 text-gray-800">
             <MapPin className="h-4 w-4 text-cyan-600" />
-            Alamat Pengiriman
+            Informasi Pengiriman
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 grid gap-4">
+          
+          {/* Input Nomor Telepon */}
+          <div className="space-y-1.5">
+             <Label htmlFor="phone" className="text-xs text-gray-500 uppercase tracking-wide">Nomor Telepon Penerima</Label>
+             <Input 
+                id="phone" 
+                name="phone" 
+                placeholder="Contoh: 08123456789" 
+                defaultValue={initialData?.no_telpon || ''}
+                required 
+                className="focus-visible:ring-cyan-500"
+             />
+             {state.errors?.phone && <p className="text-xs text-red-500 mt-1">{state.errors.phone[0]}</p>}
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="street" className="text-xs text-gray-500 uppercase tracking-wide">Alamat Lengkap</Label>
             <Textarea 
               id="street" 
               name="street" 
               placeholder="Nama Jalan, No. Rumah, RT/RW, Kelurahan, Kecamatan" 
-              defaultValue={initialAddress?.address_street || ''}
+              defaultValue={initialData?.address_street || ''}
               required 
               className="min-h-[80px] resize-none focus-visible:ring-cyan-500"
             />
             {state.errors?.street && <p className="text-xs text-red-500 mt-1">{state.errors.street[0]}</p>}
           </div>
           
-          {/* Grid 3 Kolom agar compact */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="city" className="text-xs text-gray-500 uppercase tracking-wide">Kota/Kab</Label>
@@ -83,8 +97,9 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                 id="city" 
                 name="city" 
                 placeholder="Cth: Jakarta Selatan" 
-                defaultValue={initialAddress?.address_city || ''}
+                defaultValue={initialData?.address_city || ''}
                 required 
+                className="focus-visible:ring-cyan-500"
               />
               {state.errors?.city && <p className="text-xs text-red-500 mt-1">{state.errors.city[0]}</p>}
             </div>
@@ -94,8 +109,9 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                 id="province" 
                 name="province" 
                 placeholder="Cth: DKI Jakarta" 
-                defaultValue={initialAddress?.address_province || ''}
+                defaultValue={initialData?.address_province || ''}
                 required 
+                className="focus-visible:ring-cyan-500"
               />
               {state.errors?.province && <p className="text-xs text-red-500 mt-1">{state.errors.province[0]}</p>}
             </div>
@@ -105,8 +121,9 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                 id="postal_code" 
                 name="postal_code" 
                 placeholder="Cth: 12345" 
-                defaultValue={initialAddress?.address_postal_code || ''}
+                defaultValue={initialData?.address_postal_code || ''}
                 required 
+                className="focus-visible:ring-cyan-500"
               />
                {state.errors?.postal_code && <p className="text-xs text-red-500 mt-1">{state.errors.postal_code[0]}</p>}
             </div>
@@ -181,7 +198,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
             )}
           </div>
 
-          {/* Upload Bukti (Conditional) */}
+          {/* Upload Bukti */}
           {method !== 'cod' && (
             <div className="space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
               <Label htmlFor="payment_proof" className="text-sm font-medium">Unggah Bukti Transfer</Label>
@@ -219,7 +236,6 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
             </div>
           )}
 
-          {/* Error Alert */}
           {!state.success && state.message && (
             <Alert variant="destructive">
               <AlertDescription>{state.message}</AlertDescription>

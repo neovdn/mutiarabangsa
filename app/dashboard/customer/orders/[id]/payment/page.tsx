@@ -3,7 +3,6 @@ import { notFound, redirect } from 'next/navigation';
 import { PaymentClient } from './payment-client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Package, CreditCard } from 'lucide-react';
 
 // Helper currency
 const formatIDR = (amount: number) => {
@@ -72,10 +71,11 @@ export default async function PaymentPage({ params }: PageProps) {
     );
   }
 
-  // 2. Ambil Data Profil untuk Pre-fill Alamat
+  // 2. Ambil Data Profil untuk Pre-fill Alamat & Telepon
   const { data: profile } = await supabase
     .from('profiles')
-    .select('address_street, address_city, address_province, address_postal_code')
+    // Tambahkan no_telpon di sini
+    .select('no_telpon, address_street, address_city, address_province, address_postal_code')
     .eq('id', user.id)
     .single();
 
@@ -93,16 +93,17 @@ export default async function PaymentPage({ params }: PageProps) {
           <PaymentClient 
             orderId={order.id} 
             amount={order.total_amount} 
-            initialAddress={profile} 
+            initialData={profile} // Kirim data profil (termasuk telepon)
           />
         </div>
 
         {/* KOLOM KANAN: RINGKASAN (Span 1) - Sticky */}
         <div className="lg:col-span-1 sticky top-24">
+          {/* ... (Card ringkasan pesanan sama seperti sebelumnya) ... */}
           <Card className="bg-gray-50/50 border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Package className="h-5 w-5 text-gray-500" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-gray-500"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22v-10"/></svg>
                 Ringkasan Pesanan
               </CardTitle>
               <CardDescription className="text-xs">ID: #{order.id.slice(0, 8)}</CardDescription>
@@ -131,10 +132,6 @@ export default async function PaymentPage({ params }: PageProps) {
                   <span>Subtotal Produk</span>
                   <span>{formatIDR(order.total_amount)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Biaya Layanan</span>
-                  <span>Rp 0</span>
-                </div>
               </div>
 
               <Separator className="bg-gray-200" />
@@ -142,11 +139,6 @@ export default async function PaymentPage({ params }: PageProps) {
               <div className="flex justify-between items-center">
                 <span className="font-bold text-base text-gray-900">Total Tagihan</span>
                 <span className="font-bold text-lg text-cyan-600">{formatIDR(order.total_amount)}</span>
-              </div>
-              
-              <div className="pt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
-                <CreditCard className="h-3 w-3" />
-                <span>Pembayaran Aman & Terenkripsi</span>
               </div>
             </CardContent>
           </Card>

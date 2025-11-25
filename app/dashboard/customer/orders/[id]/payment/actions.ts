@@ -11,14 +11,15 @@ export type PaymentFormState = {
   errors?: Record<string, string[] | undefined>;
 };
 
-// Schema validasi
+// Update schema untuk menyertakan phone
 const paymentSchema = z.object({
   order_id: z.string().uuid(),
   method: z.enum(['bank_transfer', 'e_wallet', 'cod'], {
     errorMap: () => ({ message: 'Pilih metode pembayaran yang valid' }),
   }),
   amount: z.coerce.number(),
-  // Schema Alamat (Wajib)
+  // Data Alamat & Kontak
+  phone: z.string().min(9, 'Nomor telepon wajib diisi (min 9 angka)').regex(/^\d+$/, 'Nomor telepon harus berupa angka'),
   street: z.string().min(5, 'Alamat jalan wajib diisi (min 5 karakter)'),
   city: z.string().min(3, 'Kota wajib diisi'),
   province: z.string().min(3, 'Provinsi wajib diisi'),
@@ -31,17 +32,17 @@ export async function submitPayment(
 ): Promise<PaymentFormState> {
   const supabase = createSupabaseServerClient();
   
-  // 1. Cek User
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, message: 'Sesi habis. Silakan login kembali.' };
   }
 
-  // 2. Validasi Data Form
+  // Validasi Data Form
   const validatedFields = paymentSchema.safeParse({
     order_id: formData.get('order_id'),
     method: formData.get('method'),
     amount: formData.get('amount'),
+    phone: formData.get('phone'), // <-- Get phone
     street: formData.get('street'),
     city: formData.get('city'),
     province: formData.get('province'),
@@ -51,15 +52,15 @@ export async function submitPayment(
   if (!validatedFields.success) {
     return {
       success: false,
-      message: 'Mohon lengkapi semua data alamat dengan benar.',
+      message: 'Mohon lengkapi semua data dengan benar.',
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
 
-  const { order_id, method, amount, street, city, province, postal_code } = validatedFields.data;
+  const { order_id, method, amount, phone, street, city, province, postal_code } = validatedFields.data;
   const proofFile = formData.get('payment_proof') as File | null;
 
-  // 3. Validasi Bukti Bayar (Kecuali COD)
+  // Validasi Bukti Bayar (Kecuali COD)
   if (method !== 'cod') {
     if (!proofFile || proofFile.size === 0) {
       return { success: false, message: 'Bukti pembayaran wajib diunggah.' };
@@ -72,10 +73,11 @@ export async function submitPayment(
   let paymentProofUrl = null;
 
   try {
-    // 4. UPDATE ALAMAT (PENTING: Menggunakan select() untuk verifikasi)
+    // 4. UPDATE ALAMAT & NO TELPON
     const { data: updatedOrder, error: addressError } = await supabase
       .from('orders')
       .update({
+        shipping_address_phone: phone, // <-- Simpan no telp
         shipping_address_street: street,
         shipping_address_city: city,
         shipping_address_province: province,
@@ -83,21 +85,20 @@ export async function submitPayment(
         updated_at: new Date().toISOString(),
       })
       .eq('id', order_id)
-      .eq('user_id', user.id) // Pastikan hanya mengupdate order milik user sendiri
-      .select(); // <-- Return data yang diupdate untuk pengecekan
+      .eq('user_id', user.id)
+      .select(); 
 
-    if (addressError) throw new Error(`Gagal menyimpan alamat: ${addressError.message}`);
+    if (addressError) throw new Error(`Gagal menyimpan data pengiriman: ${addressError.message}`);
     
-    // Jika tidak ada data yang dikembalikan, berarti order_id tidak ditemukan atau user_id tidak cocok
     if (!updatedOrder || updatedOrder.length === 0) {
       throw new Error('Order tidak ditemukan atau Anda tidak memiliki akses.');
     }
 
-    // 5. Upload Bukti ke Storage (Jika ada)
+    // 5. Upload Bukti (Jika ada)
     if (method !== 'cod' && proofFile) {
       const fileExtension = proofFile.name.split('.').pop();
       const fileName = `proof-${order_id}-${Date.now()}.${fileExtension}`;
-      const filePath = `payment-proofs/${fileName}`; // Pastikan bucket 'payment-proofs' ada dan public/policy open
+      const filePath = `payment-proofs/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('payment-proofs') 
@@ -112,7 +113,7 @@ export async function submitPayment(
       paymentProofUrl = urlData.publicUrl;
     }
 
-    // 6. Insert Record Pembayaran
+    // 6. Insert Pembayaran
     const { error: insertError } = await supabase.from('payments').insert({
       order_id,
       method,
@@ -123,8 +124,7 @@ export async function submitPayment(
 
     if (insertError) throw new Error(`Gagal menyimpan pembayaran: ${insertError.message}`);
 
-    // 7. Update Status Order via RPC (Agar aman & atomik)
-    // Status: 'waiting_confirmation' (Transfer) atau 'processing' (COD)
+    // 7. Update Status
     const newStatus = method === 'cod' ? 'processing' : 'waiting_confirmation';
 
     const { error: rpcError } = await supabase.rpc('update_order_status_payment', {
@@ -143,7 +143,6 @@ export async function submitPayment(
     };
   }
 
-  // 8. Redirect Sukses
   revalidatePath('/dashboard/customer/history');
   redirect('/dashboard/customer/history');
 }

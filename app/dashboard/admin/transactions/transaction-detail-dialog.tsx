@@ -38,7 +38,8 @@ import {
   User, 
   CreditCard,
   Calendar,
-  MapPin
+  MapPin,
+  Phone
 } from 'lucide-react';
 
 interface TransactionDetailDialogProps {
@@ -64,19 +65,27 @@ export function TransactionDetailDialog({
 
   const payment = transaction.payments?.[0];
   
+  // Helper: Gunakan nomor telpon pengiriman jika ada, jika tidak fallback ke profil
+  const contactPhone = transaction.shipping_address_phone || transaction.profiles?.no_telpon || '-';
+
   // Status Helper
   const isWaitingConfirmation = transaction.status === 'waiting_confirmation';
   const isProcessing = transaction.status === 'processing';
   const isShipped = transaction.status === 'shipped';
   const isCompleted = transaction.status === 'completed';
 
-  // --- HANDLER TRIGGER ALERT ---
+  // Format Method Helper
+  const formatMethod = (method: string) => {
+    if (!method) return '-';
+    if (method.toLowerCase() === 'cod') return 'COD';
+    return method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const triggerVerify = (action: 'accept' | 'reject') => {
     setVerificationAction(action);
     setIsAlertOpen(true);
   };
 
-  // --- EKSEKUSI VERIFIKASI SETELAH KONFIRMASI ---
   const executeVerify = () => {
     if (!verificationAction) return;
     const isValid = verificationAction === 'accept';
@@ -86,9 +95,9 @@ export function TransactionDetailDialog({
       
       if (res.success) {
         toast({ title: 'Berhasil', description: res.message });
-        setIsAlertOpen(false); // Tutup alert
-        onOpenChange(false);   // Tutup modal detail
-        router.refresh();      // Refresh data halaman
+        setIsAlertOpen(false);
+        onOpenChange(false);
+        router.refresh();
       } else {
         toast({ title: 'Gagal', description: res.message, variant: 'destructive' });
         setIsAlertOpen(false);
@@ -96,29 +105,27 @@ export function TransactionDetailDialog({
     });
   };
 
-  // --- FORM PENGIRIMAN (COMPONENT INTERNAL) ---
+  // Form Resi
   const ShippingForm = () => {
     const [state, formAction] = useFormState(updateShipping, { success: false, message: '' });
 
     useEffect(() => {
         if (state.success) {
             toast({ title: "Terkirim", description: state.message });
-            onOpenChange(false); // Tutup modal otomatis
-            router.refresh();    // Refresh data halaman
+            onOpenChange(false);
+            router.refresh();
         } else if (state.message) {
             toast({ title: "Gagal", description: state.message, variant: "destructive" });
         }
     }, [state]);
 
     return (
-      <form action={formAction} className="bg-blue-50 border border-blue-100 rounded-lg p-4 space-y-4">
+      <form action={formAction} className="bg-blue-50 border border-blue-100 rounded-lg p-4 space-y-4 mt-auto">
         <div className="flex items-center gap-2 text-blue-800">
             <Truck className="h-5 w-5" />
             <h4 className="font-semibold">Update Pengiriman</h4>
         </div>
-        
         <input type="hidden" name="order_id" value={transaction.id} />
-        
         <div className="space-y-2">
           <Label htmlFor="receipt_number" className="text-sm font-medium text-gray-700">
              Masukkan Nomor Resi
@@ -134,7 +141,7 @@ export function TransactionDetailDialog({
             <ShippingSubmitButton />
           </div>
           <p className="text-xs text-blue-600/80">
-            Menginput resi akan mengubah status pesanan menjadi "Dikirim" dan menutup jendela ini.
+            Menginput resi akan mengubah status pesanan menjadi "Dikirim".
           </p>
         </div>
       </form>
@@ -147,7 +154,6 @@ export function TransactionDetailDialog({
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
           
           {/* Header */}
-          {/* Tambahkan pr-10 agar teks status tidak tertutup tombol close */}
           <DialogHeader className="px-6 py-4 border-b bg-gray-50/50 pr-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <DialogTitle className="flex items-center gap-2 text-xl">
@@ -163,12 +169,11 @@ export function TransactionDetailDialog({
             </div>
           </DialogHeader>
 
-          {/* Content Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               
               {/* KOLOM KIRI: Detail Pesanan */}
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6 h-full">
                 
                 {/* Informasi Pelanggan */}
                 <div className="space-y-3">
@@ -181,7 +186,7 @@ export function TransactionDetailDialog({
                       <span className="font-medium">{transaction.profiles?.full_name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">No. Telpon:</span>
+                      <span className="text-gray-500">No. Telpon (Akun):</span>
                       <span className="font-medium">{transaction.profiles?.no_telpon || '-'}</span>
                     </div>
                     <div className="flex justify-between">
@@ -196,24 +201,30 @@ export function TransactionDetailDialog({
                   </div>
                 </div>
 
-                {/* Alamat Pengiriman (UPDATED) */}
+                {/* Alamat Pengiriman & Kontak Penerima */}
                 <div className="space-y-3">
                   <h4 className="font-semibold flex items-center gap-2 text-gray-800">
-                    <MapPin className="h-4 w-4" /> Alamat Pengiriman
+                    <MapPin className="h-4 w-4" /> Detail Pengiriman
                   </h4>
-                  <div className="bg-gray-50 p-3 rounded-md text-sm border text-gray-700 leading-relaxed">
+                  <div className="bg-gray-50 p-3 rounded-md text-sm border text-gray-700 leading-relaxed space-y-2">
+                    
+                    {/* Nomor Kontak Penerima */}
+                    <div className="flex items-center gap-2 text-cyan-700 bg-cyan-50/50 p-2 rounded">
+                        <Phone className="h-3 w-3" />
+                        <span className="font-medium">Kontak Penerima: {contactPhone}</span>
+                    </div>
+
                     {transaction.shipping_address_street ? (
-                      <>
+                      <div>
                         <p className="font-medium text-gray-900 mb-1">{transaction.shipping_address_street}</p>
                         <p>{transaction.shipping_address_city}, {transaction.shipping_address_province}</p>
                         <p className="text-xs text-gray-500 mt-1">Kode Pos: {transaction.shipping_address_postal_code}</p>
-                      </>
+                      </div>
                     ) : (
                       <p className="italic text-gray-400">Alamat tidak tersedia</p>
                     )}
                   </div>
                   
-                  {/* Tampilkan Resi Jika Ada */}
                   {(isShipped || isCompleted) && transaction.shipping_receipt_number && (
                      <div className="mt-2 flex items-center gap-2 text-sm bg-green-50 border border-green-200 p-2 rounded-md text-green-800">
                         <Truck className="h-4 w-4" />
@@ -257,86 +268,87 @@ export function TransactionDetailDialog({
               </div>
 
               {/* KOLOM KANAN: Pembayaran & Aksi */}
-              <div className="space-y-6">
-                <h4 className="font-semibold flex items-center gap-2 text-gray-800">
-                  <CreditCard className="h-4 w-4" /> Bukti Pembayaran
-                </h4>
+              <div className="flex flex-col gap-6 h-full">
+                <div className="flex-1 flex flex-col gap-6">
+                    <div>
+                        <h4 className="font-semibold flex items-center gap-2 text-gray-800 mb-3">
+                        <CreditCard className="h-4 w-4" /> Bukti Pembayaran
+                        </h4>
 
-                <div className="bg-gray-50 rounded-lg border p-4">
-                  <div className="flex justify-between items-center mb-4 text-sm">
-                     <span className="text-gray-500">Metode: <span className="font-medium text-gray-900 capitalize">{payment?.method?.replace('_', ' ')}</span></span>
-                     <span className="text-gray-500">Status: <span className={payment?.status === 'verified' ? 'text-green-600 font-bold' : 'text-yellow-600 font-bold'}>{payment?.status || 'Pending'}</span></span>
-                  </div>
+                        <div className="bg-gray-50 rounded-lg border p-4">
+                        <div className="flex justify-between items-center mb-4 text-sm">
+                            <span className="text-gray-500">Metode: <span className="font-medium text-gray-900">{formatMethod(payment?.method)}</span></span>
+                            <span className="text-gray-500">Status: <span className={payment?.status === 'verified' ? 'text-green-600 font-bold' : 'text-yellow-600 font-bold'}>{payment?.status || 'Pending'}</span></span>
+                        </div>
 
-                  {/* Gambar Bukti Pembayaran - FULL SIZE */}
-                  {payment?.payment_proof_url ? (
-                    <div className="relative w-full rounded-md overflow-hidden border bg-white">
-                      <img 
-                          src={payment.payment_proof_url} 
-                          alt="Bukti Bayar" 
-                          className="w-full h-auto max-h-[400px] object-contain mx-auto"
-                      />
-                      <a 
-                        href={payment.payment_proof_url} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
-                      >
-                        Lihat Asli
-                      </a>
+                        {/* Gambar Bukti Pembayaran - FULL SIZE */}
+                        {payment?.payment_proof_url ? (
+                            <div className="relative w-full rounded-md overflow-hidden border bg-white">
+                            <img 
+                                src={payment.payment_proof_url} 
+                                alt="Bukti Bayar" 
+                                className="w-full h-auto max-h-[400px] object-contain mx-auto"
+                            />
+                            <a 
+                                href={payment.payment_proof_url} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded hover:bg-black/90 transition-colors"
+                            >
+                                Lihat Asli
+                            </a>
+                            </div>
+                        ) : (
+                            <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md bg-gray-50 text-gray-400">
+                            <CreditCard className="h-8 w-8 mb-2 opacity-50" />
+                            <span className="text-sm">Belum ada bukti pembayaran</span>
+                            </div>
+                        )}
+                        </div>
                     </div>
-                  ) : (
-                     <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md bg-gray-50 text-gray-400">
-                       <CreditCard className="h-8 w-8 mb-2 opacity-50" />
-                       <span className="text-sm">Belum ada bukti pembayaran</span>
-                     </div>
-                  )}
-                </div>
 
-                {/* --- AREA AKSI (Action Area) --- */}
-                <div className="space-y-4">
-                  
-                  {/* KASUS 1: Menunggu Konfirmasi -> Tombol Verifikasi */}
-                  {isWaitingConfirmation && payment?.payment_proof_url && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                      <h5 className="font-semibold text-sm text-yellow-800 mb-2">Verifikasi Pembayaran</h5>
-                      <p className="text-xs text-yellow-700 mb-4">
-                        Cek kesesuaian nominal <b>{formatCurrency(transaction.total_amount)}</b> dengan bukti transfer di atas.
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button 
-                          className="bg-green-600 hover:bg-green-700 text-white w-full"
-                          onClick={() => triggerVerify('accept')}
-                          disabled={isPending}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Valid (Proses)
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          className="w-full"
-                          onClick={() => triggerVerify('reject')}
-                          disabled={isPending}
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Tidak Valid
-                        </Button>
-                      </div>
+                    {/* --- AREA AKSI (Action Area) - Pushed to bottom via flex-1 if needed --- */}
+                    <div className="mt-auto space-y-4">
+                    
+                    {isWaitingConfirmation && payment?.payment_proof_url && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h5 className="font-semibold text-sm text-yellow-800 mb-2">Verifikasi Pembayaran</h5>
+                        <p className="text-xs text-yellow-700 mb-4">
+                            Cek kesesuaian nominal <b>{formatCurrency(transaction.total_amount)}</b> dengan bukti transfer di atas.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button 
+                            className="bg-green-600 hover:bg-green-700 text-white w-full"
+                            onClick={() => triggerVerify('accept')}
+                            disabled={isPending}
+                            >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Valid (Proses)
+                            </Button>
+                            <Button 
+                            variant="destructive" 
+                            className="w-full"
+                            onClick={() => triggerVerify('reject')}
+                            disabled={isPending}
+                            >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Tidak Valid
+                            </Button>
+                        </div>
+                        </div>
+                    )}
+
+                    {isProcessing && (
+                        <ShippingForm />
+                    )}
+
+                    {(isShipped || isCompleted) && (
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                            <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                            <p className="text-green-800 font-medium">Pesanan sedang dalam pengiriman atau selesai.</p>
+                        </div>
+                    )}
                     </div>
-                  )}
-
-                  {/* KASUS 2: Sudah Diproses -> Form Input Resi */}
-                  {isProcessing && (
-                      <ShippingForm />
-                  )}
-
-                  {/* KASUS 3: Pesanan Selesai/Dikirim -> Info */}
-                  {(isShipped || isCompleted) && (
-                     <div className="bg-green-50 p-4 rounded-lg border border-green-100 text-center">
-                        <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                        <p className="text-green-800 font-medium">Pesanan sedang dalam pengiriman atau selesai.</p>
-                     </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -367,7 +379,7 @@ export function TransactionDetailDialog({
             <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
-                e.preventDefault(); // Prevent auto close
+                e.preventDefault();
                 executeVerify();
               }}
               className={verificationAction === 'reject' ? 'bg-destructive hover:bg-destructive/90' : 'bg-green-600 hover:bg-green-700'}

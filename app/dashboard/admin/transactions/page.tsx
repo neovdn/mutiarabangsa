@@ -1,39 +1,61 @@
-/*
- * File dimodifikasi: app/dashboard/admin/transactions/page.tsx
- * Deskripsi: Disederhanakan, logika auth & layout dihapus.
- */
-import SearchBar from '@/components/SearchBar';
-import { Receipt } from 'lucide-react';
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
+import { TransactionClient } from './transaction-client';
+import { Toaster } from '@/components/ui/toaster';
 
-export default function AdminTransactionsPage() {
+export const dynamic = 'force-dynamic';
+
+async function getAllTransactions() {
+  const supabase = createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select(`
+      *,
+      profiles (
+        full_name,
+        no_telpon
+      ),
+      payments (
+        method,
+        payment_proof_url,
+        status
+      ),
+      order_items (
+        quantity,
+        price_at_purchase,
+        product_variants (
+          size,
+          products (
+            name,
+            image_url
+          )
+        )
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching transactions:', error.message);
+    return [];
+  }
+
+  return data;
+}
+
+export default async function AdminTransactionsPage() {
+  const transactions = await getAllTransactions();
+
   return (
     <>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2">Kelola Transaksi</h2>
+        <h2 className="text-3xl font-bold text-black mb-2">Manajemen Transaksi</h2>
         <p className="text-gray-600">
-          Lihat dan kelola semua transaksi yang masuk
+          Verifikasi pembayaran dan atur pengiriman pesanan pelanggan.
         </p>
       </div>
 
-      <div className="mb-8">
-        <SearchBar />
-      </div>
-
-      {/* Konten Halaman Transaksi */}
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <div className="max-w-md mx-auto">
-          <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-            <Receipt className="h-12 w-12 text-gray-400" />
-          </div>
-          <h3 className="text-2xl font-semibold text-black mb-3">
-            Manajemen Transaksi
-          </h3>
-          <p className="text-gray-600 leading-relaxed">
-            Gunakan halaman ini untuk melihat detail pesanan, memperbarui status
-            pengiriman, dan mengelola pembayaran.
-          </p>
-        </div>
-      </div>
+      <TransactionClient initialTransactions={transactions} />
+      <Toaster />
     </>
   );
 }

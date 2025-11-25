@@ -25,7 +25,6 @@ export async function submitPayment(
 ): Promise<PaymentFormState> {
   const supabase = createSupabaseServerClient();
 
-  // 1. Validasi Input Dasar
   const validatedFields = paymentSchema.safeParse({
     order_id: formData.get('order_id'),
     method: formData.get('method'),
@@ -43,33 +42,25 @@ export async function submitPayment(
   const { order_id, method, amount } = validatedFields.data;
   const proofFile = formData.get('payment_proof') as File | null;
 
-  // 2. Validasi Bukti Bayar (Wajib jika bukan COD)
+  // Validasi Bukti Bayar
   if (method !== 'cod') {
     if (!proofFile || proofFile.size === 0) {
-      return {
-        success: false,
-        message: 'Bukti pembayaran wajib diunggah untuk metode Transfer/E-Wallet.',
-      };
+      return { success: false, message: 'Bukti pembayaran wajib diunggah.' };
     }
-    // Validasi tipe file sederhana
     if (!proofFile.type.startsWith('image/')) {
-      return {
-        success: false,
-        message: 'File bukti pembayaran harus berupa gambar.',
-      };
+      return { success: false, message: 'File bukti harus berupa gambar.' };
     }
   }
 
   let paymentProofUrl = null;
 
   try {
-    // 3. Upload Gambar ke Supabase Storage (Jika bukan COD)
+    // Upload Gambar
     if (method !== 'cod' && proofFile) {
       const fileExtension = proofFile.name.split('.').pop();
       const fileName = `${order_id}-${Date.now()}.${fileExtension}`;
       const filePath = `proofs/${fileName}`;
 
-      // Pastikan bucket 'payment-proofs' sudah dibuat di Supabase dan Policy RLS sudah diatur
       const { error: uploadError } = await supabase.storage
         .from('payment-proofs') 
         .upload(filePath, proofFile);
@@ -83,22 +74,25 @@ export async function submitPayment(
       paymentProofUrl = urlData.publicUrl;
     }
 
-    // 4. Insert ke Tabel Payments
+    // Insert Payments
     const { error: insertError } = await supabase.from('payments').insert({
       order_id,
       method,
       amount,
       payment_proof_url: paymentProofUrl,
-      status: 'pending', // Default status pembayaran
+      status: 'pending',
     });
 
     if (insertError) throw insertError;
 
-    // 5. Update Status Order (PENTING: Agar status pesanan berubah)
-    // Kita ubah status order menjadi 'processing' karena user sudah melakukan aksi bayar/konfirmasi COD
+    // --- UPDATE STATUS LOGIC BARU ---
+    // COD -> Langsung 'processing'
+    // Transfer/E-Wallet -> 'waiting_confirmation'
+    const newStatus = method === 'cod' ? 'processing' : 'waiting_confirmation';
+
     const { error: updateError } = await supabase
       .from('orders')
-      .update({ status: 'processing' })
+      .update({ status: newStatus })
       .eq('id', order_id);
 
     if (updateError) throw updateError;
@@ -110,7 +104,6 @@ export async function submitPayment(
     };
   }
 
-  // 6. Redirect ke halaman riwayat
   revalidatePath('/dashboard/customer/history');
   redirect('/dashboard/customer/history');
 }

@@ -11,13 +11,13 @@ export type CheckoutFormState = {
 
 // Tipe data internal untuk proses checkout
 type CartItemForCheckout = {
-  id: string; // id item keranjang
+  id: string;
   quantity: number;
   product_variants: {
-    size: any;
     id: string;
+    size: any;
     stock: number;
-    price: number; // Sesuai skema (integer)
+    price: number;
     products: {
       name: string;
     } | null;
@@ -30,16 +30,13 @@ export async function createOrderFromCart(
 ): Promise<CheckoutFormState> {
   const supabase = createSupabaseServerClient();
 
-  // 1. Dapatkan user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return { success: false, message: 'Gagal: Anda harus login.' };
   }
 
-  // 2. Ambil semua item di keranjang user dari server (data terpercaya)
+  // Ambil data keranjang
   const { data: cartItems, error: cartError } = await supabase
     .from('cart_items')
     .select(
@@ -53,7 +50,7 @@ export async function createOrderFromCart(
         price,
         products ( name )
       )
-    `,
+    `
     )
     .eq('user_id', user.id);
 
@@ -66,47 +63,81 @@ export async function createOrderFromCart(
   }
 
   const items = cartItems as unknown as CartItemForCheckout[];
-  let calculatedTotalAmount = 0;
-  const itemsForOrderRPC: any[] = []; // Untuk JSONB
+  
+  // 1. AGREGASI: Gabungkan item yang sama (jika ada duplikat varian di cart)
+  // Ini mencegah validasi stok yang salah
+  const aggregatedItems = new Map<string, {
+    quantity: number,
+    price: number,
+    stock: number,
+    name: string,
+    size: string
+  }>();
 
-  // 3. Validasi Stok dan Hitung Total Harga (Server-side)
   for (const item of items) {
     const variant = item.product_variants;
     const product = variant?.products;
 
     if (!variant || !product) {
-      return {
-        success: false,
-        message: 'Beberapa item di keranjang Anda tidak valid lagi.',
-      };
+      return { success: false, message: 'Item tidak valid ditemukan.' };
     }
 
-    // Cek Stok!
-    if (item.quantity > variant.stock) {
-      return {
-        success: false,
-        message: `Stok tidak cukup untuk ${product.name} (${variant.size}). Sisa stok: ${variant.stock}.`,
-      };
+    const current = aggregatedItems.get(variant.id);
+    if (current) {
+      current.quantity += item.quantity;
+    } else {
+      aggregatedItems.set(variant.id, {
+        quantity: item.quantity,
+        price: variant.price,
+        stock: variant.stock, // Stok diambil dari salah satu item (karena sama)
+        name: product.name,
+        size: variant.size
+      });
     }
-
-    const itemPrice = variant.price; // Ini adalah integer
-    calculatedTotalAmount += itemPrice * item.quantity;
-
-    // Siapkan data untuk dikirim ke RPC
-    itemsForOrderRPC.push({
-      variant_id: variant.id,
-      quantity: item.quantity,
-      price_at_purchase: itemPrice,
-    });
   }
 
-  // 4. Panggil fungsi RPC yang baru kita buat
+  let calculatedTotalAmount = 0;
+  const itemsForOrderRPC: any[] = [];
+  
+  // Variable untuk menyimpan error stok saat loop
+  let stockError: CheckoutFormState | null = null;
+
+  // 2. VALIDASI & PERSIAPAN DATA
+  // Menggunakan forEach agar kompatibel dengan target ES5
+  aggregatedItems.forEach((info, variantId) => {
+    if (stockError) return; // Skip jika sudah ada error sebelumnya
+
+    // Cek Stok Total per Varian yang sudah diagregasi
+    if (info.quantity > info.stock) {
+      stockError = {
+        success: false,
+        message: `Stok tidak cukup untuk ${info.name} (${info.size}). Diminta: ${info.quantity}, Tersedia: ${info.stock}.`,
+      };
+      return;
+    }
+
+    calculatedTotalAmount += info.price * info.quantity;
+
+    // Masukkan ke array untuk dikirim ke RPC
+    itemsForOrderRPC.push({
+      variant_id: variantId,
+      quantity: info.quantity,
+      price_at_purchase: info.price,
+    });
+  });
+
+  // Jika ada error stok, batalkan proses dan kembalikan pesan error
+  if (stockError) {
+    return stockError;
+  }
+
+  // 3. EKSEKUSI TRANSAKSI KE DATABASE
   const { data: orderId, error: rpcError } = await supabase.rpc(
     'create_order_and_clear_cart',
     {
       p_user_id: user.id,
-      p_total_amount: calculatedTotalAmount, // Kirim sebagai integer
-      p_order_items: itemsForOrderRPC,       // Kirim sebagai JSON
+      p_total_amount: calculatedTotalAmount,
+      p_order_items: itemsForOrderRPC, // Kita kirim data yang SUDAH diagregasi
     },
   );
 
@@ -117,14 +148,11 @@ export async function createOrderFromCart(
     };
   }
 
-  // 5. Revalidasi path dan Redirect
+  // 4. Revalidasi dan Redirect
   revalidatePath('/dashboard/customer/cart');
   revalidatePath('/dashboard/customer/history');
-  revalidatePath('/dashboard/customer/catalog'); // Stok berubah
-  revalidatePath('/dashboard/admin/stock'); // Stok berubah
+  revalidatePath('/dashboard/customer/catalog');
+  revalidatePath('/dashboard/admin/stock');
 
   redirect(`/dashboard/customer/orders/${orderId}/payment`);
-  
-  // Baris ini tidak akan tercapai karena redirect
-  // return { success: true, message: 'Pesanan berhasil dibuat!' };
 }

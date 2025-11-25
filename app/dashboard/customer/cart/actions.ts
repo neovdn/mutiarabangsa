@@ -10,12 +10,13 @@ export type CartFormState = {
   errors?: Record<string, string[] | undefined>;
 };
 
-// Skema untuk validasi input
+// Skema untuk validasi input tambah ke keranjang
 const addToCartSchema = z.object({
   variant_id: z.string().uuid('Varian produk tidak valid'),
   quantity: z.coerce.number().int().min(1, 'Jumlah harus minimal 1'),
 });
 
+// --- ACTION 1: Tambah Item ke Keranjang ---
 export async function addItemToCart(
   prevState: CartFormState,
   formData: FormData,
@@ -88,5 +89,89 @@ export async function addItemToCart(
       success: false,
       message: `Terjadi kesalahan: ${e.message}`,
     };
+  }
+}
+
+// --- ACTION 2: Update Kuantitas Item ---
+export async function updateCartItemQuantity(itemId: string, newQuantity: number) {
+  const supabase = createSupabaseServerClient();
+
+  try {
+    // 1. Validasi input dasar
+    if (newQuantity < 1) {
+      return { success: false, message: 'Jumlah minimal adalah 1' };
+    }
+
+    // 2. Cek stok sebelum update (mencegah update melebihi stok di DB)
+    const { data: cartItem, error: fetchError } = await supabase
+      .from('cart_items')
+      .select('variant_id, product_variants(stock)')
+      .eq('id', itemId)
+      .single();
+
+    if (fetchError || !cartItem) throw new Error('Item tidak ditemukan');
+    
+    // @ts-ignore
+    const availableStock = cartItem.product_variants?.stock || 0;
+
+    if (newQuantity > availableStock) {
+        return { success: false, message: `Stok tidak mencukupi. Maksimal: ${availableStock}` };
+    }
+
+    // 3. Update
+    const { error } = await supabase
+      .from('cart_items')
+      .update({ quantity: newQuantity })
+      .eq('id', itemId);
+
+    if (error) throw error;
+
+    revalidatePath('/dashboard/customer/cart');
+    return { success: true, message: 'Jumlah diperbarui' };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+// --- ACTION 3: Hapus Satu Item ---
+export async function deleteCartItem(itemId: string) {
+  const supabase = createSupabaseServerClient();
+  
+  try {
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) throw error;
+
+    revalidatePath('/dashboard/customer/cart'); // Update tabel keranjang
+    revalidatePath('/dashboard/customer'); // Update badge notifikasi di navbar
+    return { success: true, message: 'Item dihapus dari keranjang' };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+// --- ACTION 4: Kosongkan Seluruh Keranjang ---
+export async function clearCart() {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, message: 'Unauthorized' };
+
+  try {
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (error) throw error;
+
+    revalidatePath('/dashboard/customer/cart');
+    revalidatePath('/dashboard/customer');
+    return { success: true, message: 'Keranjang dikosongkan' };
+  } catch (error: any) {
+    return { success: false, message: error.message };
   }
 }

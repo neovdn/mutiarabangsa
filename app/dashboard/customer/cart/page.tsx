@@ -1,17 +1,17 @@
-import Image from 'next/image';
-import { ShoppingCart } from 'lucide-react';
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
-import { CartClient } from './cart-client'; // <-- Impor komponen client baru
+import { CartClient } from './cart-client';
 import { Suspense } from 'react';
+import { ShoppingCart } from 'lucide-react';
 
-// Tipe data yang kita fetch
-type CartItemWithDetails = {
+// Tipe data yang kita fetch, sekarang menyertakan 'stock'
+export type CartItemWithDetails = {
   id: string;
   quantity: number;
   product_variants: {
     id: string;
     size: string;
     price: number;
+    stock: number; // <-- PENTING: Field ini ditambahkan untuk validasi di client
     products: {
       id: string;
       name: string;
@@ -39,6 +39,7 @@ async function getCartItems(): Promise<CartItemWithDetails[]> {
         id,
         size,
         price,
+        stock, 
         products (
           id,
           name,
@@ -47,6 +48,7 @@ async function getCartItems(): Promise<CartItemWithDetails[]> {
       )
     `,
     )
+    // ^^^ 'stock' ditambahkan di query select di atas
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 
@@ -87,8 +89,7 @@ export default async function CustomerCartPage() {
         </div>
       ) : (
         // Render Client Component dan teruskan data
-        // Suspense dibutuhkan karena CartClient menggunakan useFormState
-        <Suspense>
+        <Suspense fallback={<div>Memuat keranjang...</div>}>
           <CartClient cartItems={cartItems} />
         </Suspense>
       )}

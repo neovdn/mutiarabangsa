@@ -24,6 +24,12 @@ export async function submitPayment(
   formData: FormData
 ): Promise<PaymentFormState> {
   const supabase = createSupabaseServerClient();
+  
+  // Ambil user session untuk verifikasi
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: 'Anda harus login.' };
+  }
 
   const validatedFields = paymentSchema.safeParse({
     order_id: formData.get('order_id'),
@@ -74,7 +80,7 @@ export async function submitPayment(
       paymentProofUrl = urlData.publicUrl;
     }
 
-    // Insert Payments
+    // Insert Payments (Customer punya akses INSERT ke tabel payments)
     const { error: insertError } = await supabase.from('payments').insert({
       order_id,
       method,
@@ -85,17 +91,16 @@ export async function submitPayment(
 
     if (insertError) throw insertError;
 
-    // --- UPDATE STATUS LOGIC BARU ---
-    // COD -> Langsung 'processing'
-    // Transfer/E-Wallet -> 'waiting_confirmation'
+    // --- UPDATE STATUS VIA RPC ---
     const newStatus = method === 'cod' ? 'processing' : 'waiting_confirmation';
 
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', order_id);
+    const { error: rpcError } = await supabase.rpc('update_order_status_payment', {
+      p_order_id: order_id,
+      p_user_id: user.id,
+      p_status: newStatus
+    });
 
-    if (updateError) throw updateError;
+    if (rpcError) throw rpcError;
 
   } catch (error: any) {
     return {

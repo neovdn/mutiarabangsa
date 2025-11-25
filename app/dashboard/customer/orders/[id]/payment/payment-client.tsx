@@ -17,7 +17,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-6" size="lg" disabled={pending}>
-      {pending ? 'Memproses Pesanan...' : 'Bayar Sekarang'}
+      {pending ? 'Menyimpan & Memproses...' : 'Bayar Sekarang'}
     </Button>
   );
 }
@@ -49,6 +49,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
 
   return (
     <form action={formAction} className="space-y-6">
+      {/* Hidden Inputs untuk ID dan Amount */}
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="amount" value={amount} />
 
@@ -57,7 +58,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
         <CardHeader className="pb-3 border-b bg-gray-50/40">
           <CardTitle className="text-base font-semibold flex items-center gap-2 text-gray-800">
             <MapPin className="h-4 w-4 text-cyan-600" />
-            Informasi Pengiriman
+            Alamat Pengiriman
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 grid gap-4">
@@ -71,7 +72,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
               required 
               className="min-h-[80px] resize-none focus-visible:ring-cyan-500"
             />
-            {state.errors?.street && <p className="text-xs text-red-500">{state.errors.street[0]}</p>}
+            {state.errors?.street && <p className="text-xs text-red-500 mt-1">{state.errors.street[0]}</p>}
           </div>
           
           {/* Grid 3 Kolom agar compact */}
@@ -84,9 +85,8 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                 placeholder="Cth: Jakarta Selatan" 
                 defaultValue={initialAddress?.address_city || ''}
                 required 
-                className="focus-visible:ring-cyan-500"
               />
-              {state.errors?.city && <p className="text-xs text-red-500">{state.errors.city[0]}</p>}
+              {state.errors?.city && <p className="text-xs text-red-500 mt-1">{state.errors.city[0]}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="province" className="text-xs text-gray-500 uppercase tracking-wide">Provinsi</Label>
@@ -96,9 +96,8 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                 placeholder="Cth: DKI Jakarta" 
                 defaultValue={initialAddress?.address_province || ''}
                 required 
-                className="focus-visible:ring-cyan-500"
               />
-              {state.errors?.province && <p className="text-xs text-red-500">{state.errors.province[0]}</p>}
+              {state.errors?.province && <p className="text-xs text-red-500 mt-1">{state.errors.province[0]}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="postal_code" className="text-xs text-gray-500 uppercase tracking-wide">Kode Pos</Label>
@@ -108,9 +107,8 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                 placeholder="Cth: 12345" 
                 defaultValue={initialAddress?.address_postal_code || ''}
                 required 
-                className="focus-visible:ring-cyan-500"
               />
-               {state.errors?.postal_code && <p className="text-xs text-red-500">{state.errors.postal_code[0]}</p>}
+               {state.errors?.postal_code && <p className="text-xs text-red-500 mt-1">{state.errors.postal_code[0]}</p>}
             </div>
           </div>
         </CardContent>
@@ -126,14 +124,12 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
         </CardHeader>
         <CardContent className="pt-4 space-y-6">
           
-          {/* Tampilan Grid Horizontal untuk Pilihan Payment */}
           <RadioGroup 
             name="method" 
             defaultValue="bank_transfer" 
             onValueChange={setMethod}
             className="grid grid-cols-1 sm:grid-cols-3 gap-3"
           >
-            {/* Helper Component untuk Card Pilihan */}
             <PaymentOption 
               id="bank_transfer" 
               value="bank_transfer" 
@@ -160,7 +156,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
             />
           </RadioGroup>
 
-          {/* Detail Pembayaran (Conditional Rendering) */}
+          {/* Detail Pembayaran */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
             {method === 'bank_transfer' && (
                <div className="text-sm space-y-2 animate-in fade-in zoom-in-95 duration-300">
@@ -169,7 +165,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                     <li>Bank BCA: <span className="font-mono font-medium text-black">123-456-7890</span> (a.n Mutiara Bangsa)</li>
                     <li>Bank Mandiri: <span className="font-mono font-medium text-black">098-765-4321</span> (a.n Mutiara Bangsa)</li>
                   </ul>
-                  <p className="text-xs text-amber-600 mt-2">*Harap transfer sesuai nominal tagihan hingga 3 digit terakhir.</p>
+                  <p className="text-xs text-amber-600 mt-2">*Harap transfer sesuai nominal tagihan.</p>
                </div>
             )}
             {method === 'e_wallet' && (
@@ -185,7 +181,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
             )}
           </div>
 
-          {/* Upload Bukti (Hanya jika bukan COD) */}
+          {/* Upload Bukti (Conditional) */}
           {method !== 'cod' && (
             <div className="space-y-2 animate-in slide-in-from-top-2 fade-in duration-300">
               <Label htmlFor="payment_proof" className="text-sm font-medium">Unggah Bukti Transfer</Label>
@@ -207,7 +203,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
                     <div className="relative w-full h-full flex flex-col items-center">
                         <img src={previewUrl} alt="Preview" className="h-24 object-contain rounded shadow-sm" />
                         <p className="text-xs text-cyan-700 mt-2 font-medium flex items-center gap-1">
-                           <CheckCircle2 className="h-3 w-3" /> File siap diunggah
+                           <CheckCircle2 className="h-3 w-3" /> File terpilih
                         </p>
                         <p className="text-[10px] text-gray-400 mt-1">(Klik untuk ganti)</p>
                     </div>
@@ -223,7 +219,7 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
             </div>
           )}
 
-          {/* Error Message */}
+          {/* Error Alert */}
           {!state.success && state.message && (
             <Alert variant="destructive">
               <AlertDescription>{state.message}</AlertDescription>
@@ -237,7 +233,6 @@ export function PaymentClient({ orderId, amount, initialAddress }: PaymentClient
   );
 }
 
-// Komponen Kecil untuk Pilihan Payment agar Kode Lebih Rapi
 function PaymentOption({ id, value, icon, label, description, selectedValue }: any) {
     return (
         <div className="relative">

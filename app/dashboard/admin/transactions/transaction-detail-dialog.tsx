@@ -147,7 +147,8 @@ export function TransactionDetailDialog({
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
           
           {/* Header */}
-          <DialogHeader className="px-6 py-4 border-b bg-gray-50/50">
+          {/* Tambahkan pr-10 agar teks status tidak tertutup tombol close */}
+          <DialogHeader className="px-6 py-4 border-b bg-gray-50/50 pr-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <Package className="h-5 w-5 text-cyan-600" />
@@ -195,7 +196,7 @@ export function TransactionDetailDialog({
                   </div>
                 </div>
 
-                {/* Alamat Pengiriman */}
+                {/* Alamat Pengiriman (UPDATED) */}
                 <div className="space-y-3">
                   <h4 className="font-semibold flex items-center gap-2 text-gray-800">
                     <MapPin className="h-4 w-4" /> Alamat Pengiriman
@@ -203,9 +204,9 @@ export function TransactionDetailDialog({
                   <div className="bg-gray-50 p-3 rounded-md text-sm border text-gray-700 leading-relaxed">
                     {transaction.shipping_address_street ? (
                       <>
-                        <p>{transaction.shipping_address_street}</p>
+                        <p className="font-medium text-gray-900 mb-1">{transaction.shipping_address_street}</p>
                         <p>{transaction.shipping_address_city}, {transaction.shipping_address_province}</p>
-                        <p className="font-medium mt-1">Kode Pos: {transaction.shipping_address_postal_code}</p>
+                        <p className="text-xs text-gray-500 mt-1">Kode Pos: {transaction.shipping_address_postal_code}</p>
                       </>
                     ) : (
                       <p className="italic text-gray-400">Alamat tidak tersedia</p>

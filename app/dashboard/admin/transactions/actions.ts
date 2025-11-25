@@ -19,7 +19,7 @@ export async function verifyPayment(orderId: string, isValid: boolean) {
     const { error: paymentError } = await supabase
       .from('payments')
       .update({ 
-        status: isValid ? 'verified' : 'rejected', // Sesuaikan enum payment_status Anda
+        status: isValid ? 'verified' : 'rejected',
         verified_at: new Date().toISOString()
       })
       .eq('order_id', orderId);
@@ -27,8 +27,9 @@ export async function verifyPayment(orderId: string, isValid: boolean) {
     if (paymentError) throw new Error(`Gagal update payment: ${paymentError.message}`);
 
     // 2. Update status di tabel orders
-    // Jika valid -> 'processing' (siap dikirim)
-    // Jika tolak -> 'pending_payment' (minta user upload ulang) atau 'cancelled'
+    // ALUR BARU: 
+    // Jika valid -> 'processing' (Admin akan menyiapkan barang & input resi)
+    // Jika tolak -> 'pending_payment' (User harus upload ulang bukti)
     const newOrderStatus = isValid ? 'processing' : 'pending_payment';
 
     const { error: orderError } = await supabase
@@ -39,7 +40,13 @@ export async function verifyPayment(orderId: string, isValid: boolean) {
     if (orderError) throw new Error(`Gagal update order: ${orderError.message}`);
 
     revalidatePath('/dashboard/admin/transactions');
-    return { success: true, message: isValid ? 'Pembayaran diterima. Status: Diproses.' : 'Pembayaran ditolak.' };
+    
+    return { 
+      success: true, 
+      message: isValid 
+        ? 'Pembayaran diterima. Status order berubah menjadi "Diproses". Silakan atur pengiriman.' 
+        : 'Pembayaran ditolak. Status kembali ke "Belum Bayar".' 
+    };
   } catch (error: any) {
     return { success: false, message: error.message };
   }
@@ -57,14 +64,15 @@ export async function updateShipping(prevState: any, formData: FormData) {
   if (!validatedFields.success) {
     return {
       success: false,
-      message: 'Input tidak valid.',
+      message: 'Nomor resi harus diisi.',
     };
   }
 
   const { order_id, receipt_number } = validatedFields.data;
 
   try {
-    // Update nomor resi DAN ubah status jadi 'shipped'
+    // Update nomor resi DAN ubah status jadi 'shipped' (Dikirim)
+    // Ini menyelesaikan alur flow no. 6
     const { error } = await supabase
       .from('orders')
       .update({
@@ -77,7 +85,7 @@ export async function updateShipping(prevState: any, formData: FormData) {
     if (error) throw error;
 
     revalidatePath('/dashboard/admin/transactions');
-    return { success: true, message: 'Resi disimpan. Status: Dikirim.' };
+    return { success: true, message: 'Resi berhasil disimpan. Status order berubah menjadi "Dikirim".' };
   } catch (error: any) {
     return { success: false, message: `Gagal update pengiriman: ${error.message}` };
   }

@@ -1,38 +1,26 @@
-'use client';
+import { DashboardHero } from './_components/dashboard-hero';
+import { DashboardSearch } from './_components/dashboard-search';
+import { CategorySection } from './_components/category-section';
+import { StatsSection } from './_components/stats-section';
+import { RecentOrdersWidget } from './_components/recent-orders-widget';
+import { FeaturedProducts } from './_components/featured-products';
+import { PromoBanner } from './_components/promo-banner';
 
-import SearchBar from '@/components/SearchBar';
-import { LayoutDashboard } from 'lucide-react'; // <-- Ganti icon
-
-export default function CustomerDashboard() {
+export default function CustomerDashboardPage() {
   return (
-    <>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2">Dashboard</h2>
-        <p className="text-gray-600">
-          Selamat datang! Lihat status pesanan dan katalog produk.
-        </p>
-      </div>
-
-      <div className="mb-8">
-        <SearchBar />
-      </div>
-
-      {/* Konten Halaman Dashboard Customer */}
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <div className="max-w-md mx-auto">
-          {/* Ganti ikon dan warna gradien */}
-          <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-            <LayoutDashboard className="h-12 w-12 text-gray-400" />
-          </div>
-          <h3 className="text-2xl font-semibold text-black mb-3">
-            Selamat Datang di Mutiara Bangsa
-          </h3>
-          <p className="text-gray-600 leading-relaxed">
-            Gunakan menu di atas untuk menjelajahi <b>Katalog</b>,
-            melihat <b>Keranjang</b> belanja Anda, atau mengecek <b>Riwayat Pesanan</b>.
-          </p>
-        </div>
-      </div>
-    </>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 -m-8 p-8"> 
+      {/* Note: -m-8 p-8 digunakan untuk override padding default dari layout jika diperlukan, atau sesuaikan dengan layout container kamu */}
+      
+      <DashboardHero />
+      <DashboardSearch />
+      <CategorySection />
+      <StatsSection />
+      <RecentOrdersWidget />
+      <FeaturedProducts />
+      <PromoBanner />
+      
+      {/* Spacer agar tidak mentok bawah */}
+      <div className="h-12" />
+    </div>
   );
 }

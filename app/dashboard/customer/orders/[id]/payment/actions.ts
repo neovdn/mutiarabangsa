@@ -69,7 +69,7 @@ export async function submitPayment(
       const fileName = `${order_id}-${Date.now()}.${fileExtension}`;
       const filePath = `proofs/${fileName}`;
 
-      // Pastikan bucket 'payment-proofs' sudah dibuat di Supabase
+      // Pastikan bucket 'payment-proofs' sudah dibuat di Supabase dan Policy RLS sudah diatur
       const { error: uploadError } = await supabase.storage
         .from('payment-proofs') 
         .upload(filePath, proofFile);
@@ -89,14 +89,19 @@ export async function submitPayment(
       method,
       amount,
       payment_proof_url: paymentProofUrl,
-      status: 'pending', // Default status
+      status: 'pending', // Default status pembayaran
     });
 
     if (insertError) throw insertError;
 
-    // 5. Update Status Order (Opsional, tergantung flow bisnis)
-    // Jika COD, mungkin langsung ubah status order jadi 'processing' atau tetap 'pending_payment'
-    // Untuk tutorial ini, kita biarkan order status tetap 'pending_payment' sampai Admin memverifikasi di dashboard Admin.
+    // 5. Update Status Order (PENTING: Agar status pesanan berubah)
+    // Kita ubah status order menjadi 'processing' karena user sudah melakukan aksi bayar/konfirmasi COD
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ status: 'processing' })
+      .eq('id', order_id);
+
+    if (updateError) throw updateError;
 
   } catch (error: any) {
     return {
@@ -105,7 +110,7 @@ export async function submitPayment(
     };
   }
 
-  // 6. Redirect ke halaman sukses/riwayat
+  // 6. Redirect ke halaman riwayat
   revalidatePath('/dashboard/customer/history');
   redirect('/dashboard/customer/history');
 }

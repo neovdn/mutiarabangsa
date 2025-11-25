@@ -52,3 +52,12 @@ export function processCategories(categories: Category[]): ProcessedCategory[] {
   // 6. Urutkan berdasarkan nama untuk tampilan yang rapi
   return processed.sort((a, b) => a.name.localeCompare(b.name));
 }
+
+export const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};

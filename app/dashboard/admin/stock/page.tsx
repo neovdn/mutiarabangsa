@@ -1,21 +1,15 @@
-/*
- * File dimodifikasi: app/dashboard/admin/stock/page.tsx
- * Deskripsi: Memastikan query select mengambil semua ID yang diperlukan.
- */
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
-import { StockClient, VariantWithProduct } from './stock-client'; // <-- Impor tipe baru
+import { StockClient, VariantWithProduct } from './stock-client';
 import { Toaster } from '@/components/ui/toaster';
 import { Category } from '@/types/product';
 
 export const dynamic = 'force-dynamic';
 
-// Tipe sederhana untuk dropdown
 type SimpleProduct = {
   id: string;
   name: string;
 };
 
-// 1. Ambil semua varian (data utama)
 async function getStockData(): Promise<VariantWithProduct[]> {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -33,7 +27,7 @@ async function getStockData(): Promise<VariantWithProduct[]> {
       )
     `,
     )
-    .order('stock', { ascending: true }); // Tampilkan stok rendah di atas
+    .order('stock', { ascending: true });
 
   if (error) {
     console.error('Error fetching stock data:', error.message);
@@ -43,7 +37,6 @@ async function getStockData(): Promise<VariantWithProduct[]> {
   return data as VariantWithProduct[];
 }
 
-// 2. Ambil semua produk (untuk dropdown "Tambah Varian")
 async function getProducts(): Promise<SimpleProduct[]> {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -58,7 +51,6 @@ async function getProducts(): Promise<SimpleProduct[]> {
   return data;
 }
 
-// 3. Ambil semua kategori (untuk filter)
 async function getCategories(): Promise<Category[]> {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
@@ -74,7 +66,6 @@ async function getCategories(): Promise<Category[]> {
 }
 
 export default async function AdminStockPage() {
-  // Fetch semua data di server
   const [variants, allProducts, categories] = await Promise.all([
     getStockData(),
     getProducts(),
@@ -82,14 +73,16 @@ export default async function AdminStockPage() {
   ]);
 
   return (
-    <>
-      {/* Header sekarang dirender di dalam StockClient */}
-      <StockClient
-        initialVariants={variants}
-        allProducts={allProducts}
-        allCategories={categories}
-      />
-      <Toaster />
-    </>
+    // -m-8 untuk override padding layout default
+    <div className="-m-8 w-[calc(100%+4rem)] min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-8 pb-8 pt-2">
+      <div className="container mx-auto max-w-[1600px]">
+        <StockClient
+          initialVariants={variants}
+          allProducts={allProducts}
+          allCategories={categories}
+        />
+        <Toaster />
+      </div>
+    </div>
   );
 }

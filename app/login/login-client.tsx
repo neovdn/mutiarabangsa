@@ -11,12 +11,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 
-// Helper component untuk list fitur di sisi kiri
 const FeatureItem = ({ text }: { text: string }) => (
   <div className="flex items-center gap-3">
-    {/* Ukuran ikon disesuaikan */}
     <CheckCircle className="h-5 w-5 text-white" />
-    {/* Ukuran font disesuaikan */}
     <span className="text-base">{text}</span>
   </div>
 );
@@ -80,35 +77,30 @@ export default function LoginClient() {
   };
 
   return (
-    // Mengembalikan grid layout ke 1:1 di desktop, dan 1 kolom di mobile
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Kolom Kiri (Desain) - Dibuat responsif */}
-      <div className="relative flex h-64 md:h-screen flex-col items-center justify-center p-6 md:p-10 bg-login-bg bg-cover bg-center text-white">
-        {/* Overlay Gradien */}
-        <div className="absolute inset-0 bg-login-gradient z-0" />
+    <div className="min-h-screen relative flex flex-col justify-center md:grid md:grid-cols-2">
+      
+      {/* --- PANEL VISUAL (BACKGROUND) --- */}
+      <div className="absolute inset-0 z-0 md:relative md:flex md:h-screen flex-col items-center justify-center p-6 md:p-10 bg-login-bg bg-cover bg-center text-white">
+        <div className="absolute inset-0 bg-login-gradient z-0 opacity-90 md:opacity-100" />
 
-        {/* Konten */}
-        {/* Konten dibuat responsif (ukuran & padding) */}
-        <div className="relative z-10 flex flex-col items-center text-center">
+        {/* Konten Visual (Hanya Desktop) */}
+        <div className="relative z-10 hidden md:flex flex-col items-center text-center">
           <Image
             src="/img/MUTIARABANGSA.png"
             alt="Mutiara Bangsa Logo"
-            width={160} // Ukuran desktop
+            width={160} 
             height={46}
             priority
-            className="mb-4 md:mb-6 w-[140px] md:w-[160px] h-auto" // <-- DITAMBAHKAN 'h-auto'
+            className="mb-6 w-[160px] h-auto"
           />
-          {/* Ukuran font dibuat responsif */}
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 md:mb-4">
+          <h1 className="text-4xl font-bold mb-4">
             Mutiara Bangsa
           </h1>
-          {/* Ukuran font dan max-width dibuat responsif */}
-          <p className="text-sm md:text-base max-w-xs md:max-w-sm mb-6 md:mb-8">
+          <p className="text-base max-w-sm mb-8">
             Website pembelian dan pemesanan seragam sekolah
           </p>
 
-          {/* List fitur disembunyikan di mobile */}
-          <div className="hidden md:flex flex-col space-y-3 text-left self-start max-w-sm">
+          <div className="flex flex-col space-y-3 text-left self-start max-w-sm">
             <FeatureItem text="Katalog Produk Online" />
             <FeatureItem text="Sistem Pemesanan Online" />
             <FeatureItem text="Admin Dashboard" />
@@ -117,15 +109,18 @@ export default function LoginClient() {
         </div>
       </div>
 
-      {/* Kolom Kanan (Form) */}
-      <div className="flex items-center justify-center p-8 bg-white">
-        <div className="w-full max-w-sm">
-          {/* Logo mobile di panel ini dihapus karena panel kiri sudah terlihat */}
+      {/* --- PANEL FORMULIR --- */}
+      <div className="relative z-10 flex items-center justify-center p-4 w-full md:bg-white md:p-8">
+        
+        {/* Container Form */}
+        <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-2xl md:shadow-none md:p-0 md:bg-transparent">
+          
+          {/* [DIHAPUS] Header Mobile "Mutiara Bangsa" dihapus agar lebih bersih */}
 
-          <h2 className="text-3xl font-bold text-center mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900">
             Selamat Datang
           </h2>
-          <p className="text-gray-500 text-center mb-8">
+          <p className="text-gray-500 text-center mb-8 text-sm md:text-base">
             Masuk ke akun anda untuk mengakses toko
           </p>
 
@@ -153,7 +148,7 @@ export default function LoginClient() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
-                className="bg-gray-100 border-none"
+                className="bg-gray-50 border-gray-200 focus:bg-white"
               />
             </div>
 
@@ -169,7 +164,7 @@ export default function LoginClient() {
                     setFormData({ ...formData, password: e.target.value })
                   }
                   required
-                  className="bg-gray-100 border-none pr-10"
+                  className="bg-gray-50 border-gray-200 focus:bg-white pr-10"
                 />
                 <button
                   type="button"
@@ -188,7 +183,6 @@ export default function LoginClient() {
               </div>
             </div>
 
-            {/* Bagian "Ingat saya" & "Lupa password?" */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Checkbox id="remember" />
@@ -209,13 +203,13 @@ export default function LoginClient() {
 
             <Button
               type="submit"
-              className="w-full bg-button-gradient text-black font-semibold py-6 shadow-md hover:opacity-90 rounded-sm"
+              className="w-full bg-button-gradient text-black font-semibold py-6 shadow-md hover:opacity-90 rounded-xl"
               disabled={loading}
             >
               {loading ? 'Masuk...' : 'Masuk'}
             </Button>
 
-            <div className="text-center text-sm text-gray-500">
+            <div className="text-center text-sm text-gray-500 pt-2">
               Belum punya akun?{' '}
               <Link
                 href="/register"

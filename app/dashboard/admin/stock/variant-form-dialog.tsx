@@ -103,7 +103,15 @@ export function VariantFormDialog({
         </DialogHeader>
 
         <form ref={formRef} action={formAction} className="space-y-4">
-          {isEdit && <input type="hidden" name="id" value={variant.id} />}
+          {/* --- PERBAIKAN DI SINI --- */}
+          {/* Tambahkan hidden input untuk product_id saat edit mode karena select disabled */}
+          {isEdit && (
+            <>
+              <input type="hidden" name="id" value={variant.id} />
+              <input type="hidden" name="product_id" value={variant.product_id} />
+            </>
+          )}
+          {/* --- BATAS PERBAIKAN --- */}
 
           {/* Kolom 1: Produk & Ukuran */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,7 +120,7 @@ export function VariantFormDialog({
               <Select
                 name="product_id"
                 defaultValue={variant?.product_id || undefined}
-                disabled={isEdit} // Tidak bisa ganti produk jika sedang edit
+                disabled={isEdit} // Field ini disabled saat edit, jadi nilainya tidak terkirim otomatis
                 required
               >
                 <SelectTrigger>

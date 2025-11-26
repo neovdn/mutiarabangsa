@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useFormState, useFormStatus } from 'react-dom';
 import { upsertProduct, FormState } from './actions';
@@ -58,10 +58,18 @@ export function ProductFormDialog({
   );
 
   // Proses kategori untuk dropdown
-  const processedCategories = processCategories(categories); // Memanggil fungsi baru
+  const processedCategories = processCategories(categories); 
 
   const initialState: FormState = { success: false, message: '' };
   const [state, formAction] = useFormState(upsertProduct, initialState);
+
+  // --- PERBAIKAN DISINI: Gunakan Ref untuk menghindari dependency loop ---
+  const onFormSubmitRef = useRef(onFormSubmit);
+
+  // Update ref setiap kali prop berubah, tapi tidak memicu efek utama
+  useEffect(() => {
+    onFormSubmitRef.current = onFormSubmit;
+  }, [onFormSubmit]);
 
   useEffect(() => {
     if (state.message) {
@@ -71,10 +79,13 @@ export function ProductFormDialog({
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        onFormSubmit();
+        // Panggil fungsi dari Ref agar tidak masuk dependency array
+        onFormSubmitRef.current();
       }
     }
-  }, [state, toast, onFormSubmit]);
+    // Hapus onFormSubmit dari dependency array
+  }, [state, toast]); 
+  // --- BATAS PERBAIKAN ---
 
   useEffect(() => {
     setPreviewImage(product?.image_url || null);
@@ -132,13 +143,11 @@ export function ProductFormDialog({
                 <SelectValue placeholder="Pilih kategori" />
               </SelectTrigger>
               <SelectContent>
-                {/* --- Map dari 'processedCategories' yang sudah difilter --- */}
                 {processedCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>
                 ))}
-                {/* --- Batas Perubahan --- */}
               </SelectContent>
             </Select>
             {state.errors?.category_id && (

@@ -65,6 +65,9 @@ export function ProductClient({
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
   const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
   const [isPending, startTransition] = useTransition();
+  // --- TAMBAHAN STATE UNTUK RESET KEY ---
+  const [formKey, setFormKey] = useState(0);
+  // -------------------------------------
   const { toast } = useToast();
   const router = useRouter();
 
@@ -84,11 +87,15 @@ export function ProductClient({
 
   const handleAddProduct = () => {
     setSelectedProduct(null);
+    // Reset form dengan mengubah key
+    setFormKey((prev) => prev + 1);
     setIsFormOpen(true);
   };
 
   const handleEditProduct = (product: ProductWithDetails) => {
     setSelectedProduct(product);
+    // Reset form dengan mengubah key
+    setFormKey((prev) => prev + 1);
     setIsFormOpen(true);
   };
 
@@ -130,7 +137,6 @@ export function ProductClient({
   return (
     <div className="flex flex-col gap-6">
       {/* --- TOP BAR: SEARCH & ADD BUTTON --- */}
-      {/* Sticky DIHAPUS agar tidak menutupi sidebar saat scroll dan posisi lebih natural */}
       <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-3 items-center justify-between">
          
          {/* Search Area */}
@@ -176,11 +182,9 @@ export function ProductClient({
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         
         {/* --- SIDEBAR FILTER (Sticky) --- */}
-        {/* Top-24 memastikan sidebar menempel pas di bawah navbar (bukan tertutup) */}
         <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-24">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
               <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                {/* Warna teks Header Filter: Cyan-500 */}
                 <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
                   <Filter className="h-4 w-4 text-cyan-600" /> Kategori
                 </h3>
@@ -196,7 +200,6 @@ export function ProductClient({
                   <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3']} className="w-full">
                     {Object.entries(categoryGroups).map(([groupName, groupCats], idx) => (
                       <AccordionItem key={groupName} value={`item-${idx + 1}`} className="border-b-0 mb-1">
-                        {/* Accordion Trigger: Active Text Cyan-500 */}
                         <AccordionTrigger className="px-3 py-2 hover:bg-cyan-50 rounded-lg text-sm font-semibold text-gray-700 hover:no-underline data-[state=open]:text-cyan-600">
                           {groupName}
                         </AccordionTrigger>
@@ -212,11 +215,10 @@ export function ProductClient({
                                   className={cn(
                                     "text-left text-xs py-2 px-3 rounded-lg transition-all flex items-center gap-2 w-full",
                                     filterCategory === cat.id 
-                                      ? "bg-cyan-50 text-cyan-600 font-bold shadow-sm" // Perbaikan warna teks aktif (Cyan-500)
+                                      ? "bg-cyan-50 text-cyan-600 font-bold shadow-sm"
                                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                                   )}
                                 >
-                                  {/* Indikator bulat juga Cyan-500 */}
                                   <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", filterCategory === cat.id ? "bg-cyan-600" : "bg-gray-300")} />
                                   {cat.name}
                                 </button>
@@ -264,6 +266,7 @@ export function ProductClient({
 
       {/* --- DIALOGS --- */}
       <ProductFormDialog
+        key={formKey} // <-- TAMBAHAN PENTING: Memaksa remount setiap kali key berubah
         isOpen={isFormOpen}
         onOpenChange={setIsFormOpen}
         product={selectedProduct}

@@ -34,8 +34,6 @@ const getStockInfo = (variants: ProductWithDetails['product_variants']) => {
   }
 
   const minPrice = Math.min(...prices);
-  // Jika semua varian harganya sama, tampilkan satu harga saja
-  // Jika beda, tampilkan range (opsional, disini saya buat simple min price agar compact)
   const range = formatCurrency(minPrice);
 
   return { isOutOfStock, range };
@@ -52,7 +50,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden group border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white">
       
-      {/* Gambar Produk - Aspect Ratio Square */}
+      {/* Gambar Produk */}
       <div className="relative aspect-square bg-gray-50 overflow-hidden">
         <Image
           src={product.image_url || '/img/placeholder.png'}
@@ -70,7 +68,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         )}
       </div>
 
-      {/* Konten Kartu - Padding Rapat */}
+      {/* Konten Kartu */}
       <CardContent className="p-3 flex-1 flex flex-col gap-1">
         <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider truncate">
            {product.categories?.name || 'Lainnya'}
@@ -82,6 +80,11 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         >
           {product.name}
         </h3>
+
+        {/* --- PERBAIKAN: Menampilkan Deskripsi Produk --- */}
+        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-2">
+           {product.description || 'Tidak ada deskripsi.'}
+        </p>
         
         <div className="mt-auto">
            <p className="font-bold text-[#E8207E] text-sm">
@@ -90,7 +93,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </div>
       </CardContent>
 
-      {/* Footer Aksi - Button Compact */}
+      {/* Footer Aksi */}
       <CardFooter className="p-3 pt-0">
         <Button
           size="sm"

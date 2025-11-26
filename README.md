@@ -16,7 +16,7 @@ Aplikasi ini memiliki dua peran utama:
 
 Proyek ini dibangun menggunakan tumpukan teknologi modern yang berfokus pada performa dan pengalaman pengembang:
 
-* **Framework:** **Next.js 13** (App Router)
+* **Framework:** **Next.js 14+** (App Router)
 * **Bahasa:** **TypeScript**
 * **Backend & Database:** **Supabase** (Auth, Postgres Database)
 * **Styling:** **Tailwind CSS**
@@ -56,10 +56,10 @@ pnpm install
 
 Jalankan project dengan perintah:
 
-```bash
 # Menggunakan npm
 npm run dev
-```
+
+
 mutiarabangsa
 ├─ .eslintrc.json
 ├─ app
@@ -209,5 +209,3 @@ mutiarabangsa
 │  └─ user.ts
 └─ utils
    └─ constants.ts
-
-```

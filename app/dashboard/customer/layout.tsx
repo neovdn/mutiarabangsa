@@ -1,3 +1,7 @@
+/* File: app/dashboard/customer/layout.tsx
+   Deskripsi: Mengambil data profil dan DETAIL item keranjang untuk navbar.
+*/
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,6 +9,19 @@ import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import type { Profile } from '@/types/user';
 import CustomerNavbar from '@/components/CustomerNavbar';
+
+// Definisikan tipe lokal untuk cart item di navbar
+export type NavbarCartItem = {
+  id: string;
+  quantity: number;
+  product_variants: {
+    price: number;
+    products: {
+      name: string;
+      image_url: string | null;
+    } | null;
+  } | null;
+};
 
 export default function CustomerDashboardLayout({
   children,
@@ -16,7 +33,8 @@ export default function CustomerDashboardLayout({
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cartCount, setCartCount] = useState<number | null>(null);
+  // Ubah state dari cartCount (number) menjadi cartItems (array)
+  const [cartItems, setCartItems] = useState<NavbarCartItem[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -40,7 +58,6 @@ export default function CustomerDashboardLayout({
         return;
       }
 
-      // Proteksi: Jika role bukan customer, lempar ke admin
       if (profileData.role !== 'customer') {
         router.push('/dashboard/admin');
         return;
@@ -48,22 +65,32 @@ export default function CustomerDashboardLayout({
 
       setProfile(profileData);
 
-      // Ambil jumlah keranjang
-      const fetchCartCount = async (userId: string) => {
-        const { count, error: countError } = await supabase
+      // Ambil DETAIL item keranjang, bukan cuma count
+      const fetchCartItems = async (userId: string) => {
+        const { data, error: cartError } = await supabase
           .from('cart_items')
-          .select('id', { count: 'exact', head: true })
+          .select(`
+            id,
+            quantity,
+            product_variants (
+              price,
+              products (
+                name,
+                image_url
+              )
+            )
+          `)
           .eq('user_id', userId);
 
-        if (countError) {
-          console.error('Error fetching cart count:', countError.message);
-          setCartCount(0);
+        if (cartError) {
+          console.error('Error fetching cart:', cartError.message);
         } else {
-          setCartCount(count ?? 0);
+          // @ts-ignore
+          setCartItems(data || []);
         }
       };
 
-      fetchCartCount(profileData.id);
+      fetchCartItems(profileData.id);
       setLoading(false);
     };
 
@@ -74,7 +101,7 @@ export default function CustomerDashboardLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E8207E] mx-auto"></div>
           <p className="mt-4 text-gray-600">Memuat...</p>
         </div>
       </div>
@@ -83,15 +110,13 @@ export default function CustomerDashboardLayout({
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* PERBAIKAN DI SINI:
-        Ganti prop 'userName' menjadi 'userProfile' dan kirim objek profile lengkap.
-      */}
+      {/* Kirim array cartItems ke Navbar */}
       <CustomerNavbar
         userProfile={profile} 
-        cartCount={cartCount}
+        cartItems={cartItems} 
       />
       
-      <main className="flex-1 overflow-auto p-8">
+      <main className="flex-1 overflow-auto p-0">
         {children}
       </main>
     </div>

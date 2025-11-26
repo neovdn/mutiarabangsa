@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // <-- Impor useRouter
+import { useRouter } from 'next/navigation';
 import { useFormState, useFormStatus } from 'react-dom';
 import { ProductWithDetails, ProductVariant } from '@/types/product';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +26,6 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-// ... (Interface, SubmitButton, formatCurrency) ...
 interface AddToCartDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -36,7 +35,11 @@ interface AddToCartDialogProps {
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending || disabled}>
+    <Button 
+      type="submit" 
+      disabled={pending || disabled}
+      className="bg-[#E8207E] hover:bg-[#E8207E]/90 text-white font-semibold rounded-lg" // Update Warna
+    >
       {pending ? 'Menambahkan...' : 'Tambah ke Keranjang'}
     </Button>
   );
@@ -47,9 +50,9 @@ const formatCurrency = (amount: number) => {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 };
-// ...
 
 export function AddToCartDialog({
   isOpen,
@@ -58,17 +61,14 @@ export function AddToCartDialog({
 }: AddToCartDialogProps) {
   const { toast } = useToast();
   const formRef = React.useRef<HTMLFormElement>(null);
-  const router = useRouter(); // <-- Inisialisasi router
+  const router = useRouter();
 
-  // State internal dialog
-  const [selectedVariant, setSelectedVariant] =
-    React.useState<ProductVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] = React.useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = React.useState(1);
 
   const initialState: CartFormState = { success: false, message: '' };
   const [state, formAction] = useFormState(addItemToCart, initialState);
 
-  // Reset state saat dialog dibuka/produk berubah
   React.useEffect(() => {
     if (isOpen && product) {
       if (product.product_variants.length === 1) {
@@ -81,7 +81,6 @@ export function AddToCartDialog({
     }
   }, [isOpen, product]);
 
-  // Pantau hasil server action
   React.useEffect(() => {
     if (state.message) {
       toast({
@@ -90,15 +89,14 @@ export function AddToCartDialog({
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        onOpenChange(false); // Tutup dialog jika sukses
-        router.refresh(); // <-- TAMBAHKAN INI UNTUK REFRESH LAYOUT
+        onOpenChange(false);
+        router.refresh();
       }
     }
-  }, [state, toast, onOpenChange, router]); // <-- Tambahkan router ke dependencies
+  }, [state, toast, onOpenChange, router]);
 
   if (!product) return null;
 
-  // ... (handleVariantChange, handleQuantityChange, isSubmitDisabled) ...
   const handleVariantChange = (variantId: string) => {
     const variant = product.product_variants.find((v) => v.id === variantId);
     setSelectedVariant(variant || null);
@@ -127,131 +125,128 @@ export function AddToCartDialog({
     !selectedVariant ||
     quantity <= 0 ||
     (selectedVariant && quantity > selectedVariant.stock);
-  // ...
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        {/* ... (DialogHeader, Info Produk) ... */}
+      <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{product.name}</DialogTitle>
-          <DialogDescription>
-            Pilih varian dan jumlah untuk ditambahkan ke keranjang.
-          </DialogDescription>
+          <DialogTitle>Tambah ke Keranjang</DialogTitle>
+          <DialogDescription>Pilih varian produk untuk melanjutkan.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-4">
-          <div className="w-24 flex-shrink-0">
-            <AspectRatio ratio={1 / 1}>
-              <Image
+        <div className="flex gap-4 py-2">
+          <div className="w-24 h-24 flex-shrink-0 relative rounded-xl overflow-hidden bg-gray-50 border border-gray-100">
+             <Image
                 src={product.image_url || '/img/placeholder.png'}
                 alt={product.name}
                 fill
-                className="rounded-md object-cover"
+                className="object-cover"
               />
-            </AspectRatio>
           </div>
-          <div>
-            <h3 className="font-semibold">{product.name}</h3>
-            {product.categories && (
-              <Badge variant="secondary">{product.categories.name}</Badge>
-            )}
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {product.description}
-            </p>
+          <div className="flex-1">
+            <h3 className="font-bold text-gray-900 line-clamp-2">{product.name}</h3>
+            <div className="mt-1">
+               {product.categories && (
+                 <Badge variant="secondary" className="text-[10px] px-2 bg-blue-50 text-blue-600 border-blue-100">
+                   {product.categories.name}
+                 </Badge>
+               )}
+            </div>
           </div>
         </div>
         
-        <form ref={formRef} action={formAction} className="space-y-4">
-          {/* ... (Input Tersembunyi, Pilihan Varian) ... */}
+        <form ref={formRef} action={formAction} className="space-y-5 mt-2">
           <input
             type="hidden"
             name="variant_id"
             value={selectedVariant?.id || ''}
           />
+          <input type="hidden" name="quantity" value={quantity} />
 
-          <div className="space-y-2">
-            <Label>Pilih Ukuran:</Label>
+          {/* Pilihan Varian */}
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold text-gray-700">Pilih Ukuran / Varian:</Label>
             <RadioGroup
               onValueChange={handleVariantChange}
               className="flex flex-wrap gap-2"
               value={selectedVariant?.id}
             >
-              {product.product_variants.map((variant) => (
-                <div key={variant.id}>
-                  <RadioGroupItem
-                    value={variant.id}
-                    id={variant.id}
-                    className="sr-only"
-                    disabled={variant.stock === 0}
-                  />
-                  <Label
-                    htmlFor={variant.id}
-                    className={cn(
-                      'flex items-center justify-center rounded-md border-2 px-3 py-2 text-sm font-medium cursor-pointer',
-                      'hover:bg-accent',
-                      'data-[state=checked]:border-primary data-[state=checked]:bg-primary/10',
-                      'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:bg-muted/50 data-[disabled]:hover:bg-muted/50',
-                    )}
-                    data-state={
-                      selectedVariant?.id === variant.id ? 'checked' : 'unchecked'
-                    }
-                    data-disabled={variant.stock === 0}
-                  >
-                    {variant.size}
-                  </Label>
-                </div>
-              ))}
+              {product.product_variants.length === 0 ? (
+                 <p className="text-sm text-red-500 italic">Stok belum tersedia.</p>
+              ) : (
+                product.product_variants.map((variant) => (
+                  <div key={variant.id}>
+                    <RadioGroupItem
+                      value={variant.id}
+                      id={variant.id}
+                      className="peer sr-only"
+                      disabled={variant.stock === 0}
+                    />
+                    <Label
+                      htmlFor={variant.id}
+                      className={cn(
+                        'flex flex-col items-center justify-center rounded-lg border-2 px-4 py-2 text-sm font-medium cursor-pointer transition-all min-w-[4rem]',
+                        'hover:bg-gray-50 peer-focus:ring-2 peer-focus:ring-cyan-500 peer-focus:ring-offset-2',
+                        'peer-data-[state=checked]:border-cyan-600 peer-data-[state=checked]:bg-cyan-50 peer-data-[state=checked]:text-cyan-700',
+                        'peer-data-[disabled]:opacity-50 peer-data-[disabled]:cursor-not-allowed peer-data-[disabled]:bg-gray-100 peer-data-[disabled]:border-gray-200',
+                      )}
+                    >
+                      <span className="font-bold">{variant.size}</span>
+                      <span className="text-[10px] font-normal mt-0.5 opacity-80">
+                         {variant.stock > 0 ? `Stok: ${variant.stock}` : 'Habis'}
+                      </span>
+                    </Label>
+                  </div>
+                ))
+              )}
             </RadioGroup>
           </div>
 
-          {/* ... (Info Stok & Pilihan Jumlah) ... */}
+          {/* Pilihan Jumlah */}
           {selectedVariant && (
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Jumlah:</Label>
-              <div className="flex items-center gap-4">
-                <Input
-                  id="quantity"
-                  name="quantity"
-                  type="number"
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  min={selectedVariant.stock > 0 ? 1 : 0}
-                  max={selectedVariant.stock}
-                  className="w-24"
-                  disabled={selectedVariant.stock === 0}
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-cyan-600">
-                    {formatCurrency(selectedVariant.price)} / pcs
-                  </p>
-                  <p
-                    className={cn(
-                      'text-sm',
-                      selectedVariant.stock < 10 && selectedVariant.stock > 0
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                      selectedVariant.stock === 0 && 'text-destructive font-medium',
-                    )}
-                  >
-                    Stok tersedia: {selectedVariant.stock}
-                  </p>
-                </div>
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
+              <div className="flex justify-between items-center">
+                 <Label htmlFor="qty-input" className="font-semibold text-gray-700">Jumlah:</Label>
+                 <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-lg border">
+                    <button 
+                      type="button" 
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
+                      disabled={quantity <= 1}
+                    >-</button>
+                    <Input
+                      id="qty-input"
+                      type="number"
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                      min={1}
+                      max={selectedVariant.stock}
+                      className="w-12 h-8 text-center border-none p-0 focus-visible:ring-0 font-bold"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setQuantity(Math.min(selectedVariant.stock, quantity + 1))}
+                      className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-black disabled:opacity-30"
+                      disabled={quantity >= selectedVariant.stock}
+                    >+</button>
+                 </div>
               </div>
-              {state.errors?.quantity && (
-                <p className="text-sm text-red-500">
-                  {state.errors.quantity[0]}
-                </p>
-              )}
+              
+              <div className="flex justify-between items-center border-t pt-3 border-gray-200">
+                 <span className="text-sm text-gray-600">Total Harga:</span>
+                 <span className="text-lg font-bold text-[#E8207E]">
+                    {formatCurrency(selectedVariant.price * quantity)}
+                 </span>
+              </div>
             </div>
           )}
 
-          {/* ... (DialogFooter) ... */}
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="rounded-lg"
             >
               Batal
             </Button>

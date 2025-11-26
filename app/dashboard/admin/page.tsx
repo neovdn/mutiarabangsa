@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, DollarSign, ShoppingBag, AlertTriangle, ArrowUpRight, ArrowRight, Package, Warehouse, BarChart3 } from 'lucide-react';
+import { DollarSign, ShoppingBag, AlertTriangle, ArrowUpRight, ArrowRight, Package, Warehouse, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,6 @@ export default async function AdminDashboardPage() {
     .select('*', { count: 'exact', head: true });
 
   // Produk Low Stock (< 10)
-  // Note: Supabase query untuk nested relation filter agak kompleks, kita fetch variants dulu
   const { data: lowStockVariants } = await supabase
     .from('product_variants')
     .select('stock')
@@ -52,25 +51,25 @@ export default async function AdminDashboardPage() {
     .limit(5);
 
   return (
-    // Background sedikit lebih formal (Gray/White) dibanding customer, dengan aksen Cyan halus
-    <div className="min-h-screen bg-gray-50/50">
-      <div className="container mx-auto max-w-[1400px] px-4 py-8 space-y-8">
+    // -m-8 digunakan untuk menimpa padding p-8 dari layout parent (AdminDashboardLayout)
+    // min-h-[calc(100vh-5rem)] memastikan background mengisi sisa tinggi layar (dikurangi tinggi navbar approx)
+    <div className="-m-8 min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6 md:p-8">
+      
+      <div className="container mx-auto max-w-[1400px] space-y-6">
         
-        {/* HERO SECTION */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 via-slate-900 to-cyan-900 rounded-2xl shadow-xl p-8 md:p-10 text-white">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-           <div className="relative z-10">
-              <h1 className="text-3xl font-bold mb-2">Selamat Datang, Admin</h1>
-              <p className="text-slate-300 max-w-xl">
-                Pantau kinerja toko, kelola pesanan, dan perbarui stok produk Anda dalam satu tempat.
-              </p>
-           </div>
+        {/* HEADER SIMPLE (Pengganti Banner) */}
+        {/* Jarak ke atas dikurangi secara visual karena layout padding sudah di-reset */}
+        <div className="flex flex-col gap-1 pt-2">
+           <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+           <p className="text-sm text-gray-500">
+             Ringkasan aktivitas toko dan performa penjualan Anda hari ini.
+           </p>
         </div>
 
         {/* STATS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-           {/* Card 1: Pendapatan */}
-           <Card className="border-l-4 border-l-[#E8207E] shadow-sm hover:shadow-md transition-all">
+           {/* Card 1: Pendapatan (Pink Accent) */}
+           <Card className="border-l-4 border-l-[#E8207E] shadow-sm hover:shadow-md transition-all bg-white/80 backdrop-blur-sm">
               <CardContent className="p-5">
                  <div className="flex justify-between items-start mb-2">
                     <div>
@@ -87,8 +86,8 @@ export default async function AdminDashboardPage() {
               </CardContent>
            </Card>
 
-           {/* Card 2: Pesanan */}
-           <Card className="border-l-4 border-l-cyan-500 shadow-sm hover:shadow-md transition-all">
+           {/* Card 2: Pesanan (Cyan Accent) */}
+           <Card className="border-l-4 border-l-cyan-500 shadow-sm hover:shadow-md transition-all bg-white/80 backdrop-blur-sm">
               <CardContent className="p-5">
                  <div className="flex justify-between items-start mb-2">
                     <div>
@@ -105,8 +104,8 @@ export default async function AdminDashboardPage() {
               </CardContent>
            </Card>
 
-           {/* Card 3: Produk */}
-           <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all">
+           {/* Card 3: Produk (Blue Accent) */}
+           <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-all bg-white/80 backdrop-blur-sm">
               <CardContent className="p-5">
                  <div className="flex justify-between items-start mb-2">
                     <div>
@@ -123,8 +122,8 @@ export default async function AdminDashboardPage() {
               </CardContent>
            </Card>
 
-           {/* Card 4: Low Stock */}
-           <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow-md transition-all">
+           {/* Card 4: Low Stock (Amber Warning) */}
+           <Card className="border-l-4 border-l-amber-500 shadow-sm hover:shadow-md transition-all bg-white/80 backdrop-blur-sm">
               <CardContent className="p-5">
                  <div className="flex justify-between items-start mb-2">
                     <div>
@@ -143,11 +142,11 @@ export default async function AdminDashboardPage() {
         </div>
 
         {/* RECENT TRANSACTIONS & QUICK ACTIONS */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
            
            {/* Tabel Transaksi (Kolom Besar) */}
            <div className="lg:col-span-2">
-              <Card className="border-gray-100 shadow-sm">
+              <Card className="border-gray-100 shadow-sm bg-white">
                  <CardHeader className="border-b border-gray-50 pb-4">
                     <div className="flex items-center justify-between">
                        <div>
@@ -210,25 +209,25 @@ export default async function AdminDashboardPage() {
 
            {/* Quick Actions (Kolom Kecil) */}
            <div className="lg:col-span-1">
-              <Card className="border-gray-100 shadow-sm h-full">
+              <Card className="border-gray-100 shadow-sm h-full bg-white">
                  <CardHeader>
                     <CardTitle className="text-lg font-bold text-gray-800">Akses Cepat</CardTitle>
                  </CardHeader>
                  <CardContent className="grid gap-3">
                     <Link href="/dashboard/admin/products?action=add">
-                       <Button variant="outline" className="w-full justify-start h-12 text-gray-600 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50">
+                       <Button variant="outline" className="w-full justify-start h-12 text-gray-600 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50 bg-white">
                           <Package className="mr-2 h-4 w-4 text-cyan-600" />
                           Tambah Produk Baru
                        </Button>
                     </Link>
                     <Link href="/dashboard/admin/stock">
-                       <Button variant="outline" className="w-full justify-start h-12 text-gray-600 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50">
+                       <Button variant="outline" className="w-full justify-start h-12 text-gray-600 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50 bg-white">
                           <Warehouse className="mr-2 h-4 w-4 text-cyan-600" />
                           Cek Stok Barang
                        </Button>
                     </Link>
                     <Link href="/dashboard/admin/reports">
-                       <Button variant="outline" className="w-full justify-start h-12 text-gray-600 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50">
+                       <Button variant="outline" className="w-full justify-start h-12 text-gray-600 hover:text-cyan-700 hover:border-cyan-300 hover:bg-cyan-50 bg-white">
                           <BarChart3 className="mr-2 h-4 w-4 text-cyan-600" />
                           Lihat Laporan Bulanan
                        </Button>

@@ -45,14 +45,12 @@ export default async function CustomerHistoryPage() {
   const orders = await getOrderHistory();
 
   return (
-    <>
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-black mb-2">Riwayat Transaksi</h2>
-        <p className="text-gray-600">Pantau status pesanan dan riwayat belanja Anda</p>
+    // Background Gradient Konsisten
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+      <div className="container mx-auto max-w-[1400px] px-4 py-4">
+        <HistoryClient initialOrders={orders} />
+        <Toaster />
       </div>
-      
-      <HistoryClient initialOrders={orders} />
-      <Toaster />
-    </>
+    </div>
   );
 }

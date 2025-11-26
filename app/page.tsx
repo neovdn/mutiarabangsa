@@ -7,8 +7,9 @@ import { StatsSection } from '@/components/dashboard/stats-section';
 import { RecentOrdersWidget } from '@/components/dashboard/recent-orders-widget';
 import { FeaturedProducts } from '@/components/dashboard/featured-products';
 import { PromoBanner } from '@/components/dashboard/promo-banner';
+import { ProductWithDetails, Category } from '@/types/product';
+import { Order } from '@/types/order';
 
-// Pastikan halaman ini selalu dinamis karena bergantung pada Auth
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
@@ -19,68 +20,114 @@ export default async function HomePage() {
 
   let userProfile = null;
   let cartCount = 0;
+  let recentOrders: Order[] = [];
+  let activeOrderCount = 0;
 
-  // 2. Jika Login: Ambil Profil & Keranjang
+  // 2. Fetch Data Publik (Produk & Kategori)
+  // Ambil Kategori
+  const { data: categoriesData } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name')
+    .limit(8); // Batasi 8 kategori agar rapi
+
+  // Ambil Produk (Featured) - Random atau Newest
+  const { data: productsData } = await supabase
+    .from('products')
+    .select('*, categories(*), product_variants(*)')
+    .order('created_at', { ascending: false })
+    .limit(12); // Tampilkan 12 produk terbaru
+
+  // 3. Fetch Data Personal (Jika Login)
   if (user) {
-    // Fetch Profile
+    // Profil
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
-    
     userProfile = profile;
 
-    // Fetch Cart Count
+    // Keranjang
     const { count } = await supabase
       .from('cart_items')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id);
-      
     cartCount = count || 0;
+
+    // Pesanan Terbaru
+    const { data: orders } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(3);
+    
+    // @ts-ignore
+    recentOrders = orders || [];
+
+    // Hitung Pesanan Aktif (Status selain completed/cancelled)
+    const { count: activeCount } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .in('status', ['pending_payment', 'waiting_confirmation', 'processing', 'shipped']);
+    
+    activeOrderCount = activeCount || 0;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Navbar Global dengan Logika Login/Guest */}
       <CustomerNavbar userProfile={userProfile} cartCount={cartCount} />
       
       <main className="flex-1 w-full">
-        <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-8 md:px-8 md:py-12">
-          <div className="container mx-auto space-y-12 max-w-7xl">
+        {/* Mengurangi padding vertikal agar lebih padat */}
+        <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 md:px-8 md:py-8">
+          <div className="container mx-auto space-y-6 max-w-7xl">
             
-            {/* Hero Section */}
-            <DashboardHero />
-            
-            {/* Search & Filter */}
-            <DashboardSearch />
-            
-            {/* Kategori */}
-            <CategorySection />
-            
-            {/* Widget Personal (Stats & Recent Orders).
-              Hanya tampilkan jika user login.
+            {/* 1. Hero & Search Section (Layout Grid Baru) 
+                Agar efisien, di Desktop Hero dan Search bisa berdampingan atau atas bawah yang compact 
             */}
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+               <DashboardHero />
+               {/* Search ditempelkan tepat di bawah Hero atau overlap sedikit */}
+               <div className="-mt-8 relative z-10 px-2">
+                 <DashboardSearch />
+               </div>
+            </div>
+            
+            {/* 2. Kategori (Data Real) */}
+            <CategorySection categories={categoriesData as Category[] || []} />
+
+            {/* 3. Produk Pilihan (Data Real - Urutan ditukar ke atas) */}
+            <FeaturedProducts products={productsData as ProductWithDetails[] || []} />
+            
+            {/* 4. Aktivitas Saya (Hanya jika login - Urutan ditukar ke bawah) */}
             {userProfile && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">Aktivitas Saya</h2>
-                  <p className="text-gray-500">Ringkasan belanja Anda</p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* Kolom Kiri: Stats */}
+                <div className="lg:col-span-1">
+                   <h2 className="text-xl font-bold text-gray-800 mb-4">Aktivitas Saya</h2>
+                   <StatsSection activeOrderCount={activeOrderCount} />
                 </div>
-                <StatsSection />
-                <RecentOrdersWidget />
+                
+                {/* Kolom Kanan: Recent Orders */}
+                <div className="lg:col-span-2">
+                   <div className="flex justify-between items-end mb-4">
+                      <h2 className="text-xl font-bold text-gray-800">Pesanan Terakhir</h2>
+                   </div>
+                   {/* @ts-ignore */}
+                   <RecentOrdersWidget orders={recentOrders} />
+                </div>
               </div>
             )}
 
-            {/* Produk & Promo (Tampil untuk semua) */}
-            <FeaturedProducts />
-            
+            {/* 5. Promo Banner (Paling bawah atau selingan) */}
             <PromoBanner />
           </div>
         </div>
       </main>
 
-      {/* Simple Footer */}
       <footer className="bg-white border-t py-8 text-center text-gray-500 text-sm">
         <div className="container mx-auto">
           <p>&copy; {new Date().getFullYear()} Mutiara Bangsa. All rights reserved.</p>

@@ -46,16 +46,15 @@ export default async function AdminTransactionsPage() {
   const transactions = await getAllTransactions();
 
   return (
-    <>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2">Manajemen Transaksi</h2>
-        <p className="text-gray-600">
-          Verifikasi pembayaran dan atur pengiriman pesanan pelanggan.
-        </p>
-      </div>
+    // Padding atas diubah menjadi pt-2 agar jarak ke navbar minimal
+    <div className="-m-8 w-[calc(100%+4rem)] min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-8 pb-8 pt-2">
+      <div className="container mx-auto max-w-6xl space-y-6">
+        
+        {/* Header Teks Dihapus */}
 
-      <TransactionClient initialTransactions={transactions} />
-      <Toaster />
-    </>
+        <TransactionClient initialTransactions={transactions} />
+        <Toaster />
+      </div>
+    </div>
   );
 }

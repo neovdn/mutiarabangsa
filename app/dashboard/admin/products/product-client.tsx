@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
-import { Plus, List, Grid, Search, Filter } from 'lucide-react';
+import { Plus, List, Grid, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductTable } from './product-table';
 import { ProductFormDialog } from './product-form';
@@ -29,6 +29,11 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteProduct } from './actions';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 // Helper grouping kategori
 const groupCategories = (categories: Category[]) => {
@@ -65,9 +70,11 @@ export function ProductClient({
   const [selectedProduct, setSelectedProduct] = useState<ProductWithDetails | null>(null);
   const [productToDelete, setProductToDelete] = useState<ProductWithDetails | null>(null);
   const [isPending, startTransition] = useTransition();
-  // --- TAMBAHAN STATE UNTUK RESET KEY ---
   const [formKey, setFormKey] = useState(0);
-  // -------------------------------------
+  
+  // State untuk Toggle Filter di Mobile
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   const { toast } = useToast();
   const router = useRouter();
 
@@ -87,14 +94,12 @@ export function ProductClient({
 
   const handleAddProduct = () => {
     setSelectedProduct(null);
-    // Reset form dengan mengubah key
     setFormKey((prev) => prev + 1);
     setIsFormOpen(true);
   };
 
   const handleEditProduct = (product: ProductWithDetails) => {
     setSelectedProduct(product);
-    // Reset form dengan mengubah key
     setFormKey((prev) => prev + 1);
     setIsFormOpen(true);
   };
@@ -181,57 +186,85 @@ export function ProductClient({
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         
-        {/* --- SIDEBAR FILTER (Sticky) --- */}
-        <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-24">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-cyan-600" /> Kategori
-                </h3>
-                {(filterCategory !== 'all') && (
-                  <button onClick={clearFilters} className="text-xs text-red-500 hover:underline font-medium">
-                    Reset
-                  </button>
-                )}
-              </div>
-              
-              <ScrollArea className="h-[50vh] lg:h-[calc(100vh-280px)] w-full">
-                <div className="p-2">
-                  <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3']} className="w-full">
-                    {Object.entries(categoryGroups).map(([groupName, groupCats], idx) => (
-                      <AccordionItem key={groupName} value={`item-${idx + 1}`} className="border-b-0 mb-1">
-                        <AccordionTrigger className="px-3 py-2 hover:bg-cyan-50 rounded-lg text-sm font-semibold text-gray-700 hover:no-underline data-[state=open]:text-cyan-600">
-                          {groupName}
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-1 pb-2">
-                          <div className="flex flex-col gap-1 px-2">
-                            {groupCats.length === 0 ? (
-                              <span className="text-xs text-gray-400 italic px-2">Kosong</span>
-                            ) : (
-                              groupCats.map((cat) => (
-                                <button
-                                  key={cat.id}
-                                  onClick={() => handleCategoryClick(cat.id)}
-                                  className={cn(
-                                    "text-left text-xs py-2 px-3 rounded-lg transition-all flex items-center gap-2 w-full",
-                                    filterCategory === cat.id 
-                                      ? "bg-cyan-50 text-cyan-600 font-bold shadow-sm"
-                                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                                  )}
-                                >
-                                  <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", filterCategory === cat.id ? "bg-cyan-600" : "bg-gray-300")} />
-                                  {cat.name}
-                                </button>
-                              ))
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
+        {/* --- SIDEBAR FILTER (Sticky on Desktop, Collapsible on Mobile) --- */}
+        <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-24 z-10">
+          <Collapsible
+            open={isFilterOpen}
+            onOpenChange={setIsFilterOpen}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col lg:block"
+          >
+            {/* Header Filter: Clickable on Mobile to Toggle */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 lg:cursor-default">
+                <div className="flex items-center gap-2">
+                   <Filter className="h-4 w-4 text-cyan-600" />
+                   <h3 className="font-bold text-gray-800 text-sm">Filter Kategori</h3>
                 </div>
-              </ScrollArea>
+                
+                <div className="flex items-center gap-2">
+                   {/* Reset Button */}
+                   {(filterCategory !== 'all') && (
+                      <button onClick={clearFilters} className="text-xs text-red-500 hover:underline font-medium">
+                        Reset
+                      </button>
+                   )}
+                   
+                   {/* Toggle Icon (Mobile Only) */}
+                   <CollapsibleTrigger asChild className="lg:hidden">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        {isFilterOpen ? (
+                          <ChevronUp className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-gray-500" />
+                        )}
+                      </Button>
+                   </CollapsibleTrigger>
+                </div>
             </div>
+            
+            {/* Content: Always visible on Desktop, collapsible on Mobile */}
+            <div className={cn("transition-all lg:block", isFilterOpen ? "block" : "hidden lg:block")}>
+               {/* PERBAIKAN: 
+                  - h-[50vh] diganti jadi h-auto max-h-[50vh] untuk mobile agar fleksibel.
+                  - Desktop tetap menggunakan calculation untuk sticky full height.
+               */}
+               <ScrollArea className="h-auto max-h-[50vh] lg:max-h-none lg:h-[calc(100vh-280px)] w-full transition-all">
+                  <div className="p-2">
+                    <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3']} className="w-full">
+                      {Object.entries(categoryGroups).map(([groupName, groupCats], idx) => (
+                        <AccordionItem key={groupName} value={`item-${idx + 1}`} className="border-b-0 mb-1">
+                          <AccordionTrigger className="px-3 py-2 hover:bg-cyan-50 rounded-lg text-sm font-semibold text-gray-700 hover:no-underline data-[state=open]:text-cyan-600">
+                            {groupName}
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-1 pb-2">
+                            <div className="flex flex-col gap-1 px-2">
+                              {groupCats.length === 0 ? (
+                                <span className="text-xs text-gray-400 italic px-2">Kosong</span>
+                              ) : (
+                                groupCats.map((cat) => (
+                                  <button
+                                    key={cat.id}
+                                    onClick={() => handleCategoryClick(cat.id)}
+                                    className={cn(
+                                      "text-left text-xs py-2 px-3 rounded-lg transition-all flex items-center gap-2 w-full",
+                                      filterCategory === cat.id 
+                                        ? "bg-cyan-50 text-cyan-600 font-bold shadow-sm"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                    )}
+                                  >
+                                    <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", filterCategory === cat.id ? "bg-cyan-600" : "bg-gray-300")} />
+                                    {cat.name}
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+               </ScrollArea>
+            </div>
+          </Collapsible>
         </aside>
 
         {/* --- MAIN CONTENT --- */}
@@ -266,7 +299,7 @@ export function ProductClient({
 
       {/* --- DIALOGS --- */}
       <ProductFormDialog
-        key={formKey} // <-- TAMBAHAN PENTING: Memaksa remount setiap kali key berubah
+        key={formKey} 
         isOpen={isFormOpen}
         onOpenChange={setIsFormOpen}
         product={selectedProduct}

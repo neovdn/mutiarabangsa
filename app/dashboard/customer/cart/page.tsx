@@ -3,7 +3,9 @@ import { CartClient } from './cart-client';
 import { Suspense } from 'react';
 import { ShoppingCart } from 'lucide-react';
 
-// Tipe data yang kita fetch, sekarang menyertakan 'stock'
+export const dynamic = 'force-dynamic';
+
+// Tipe data yang kita fetch
 export type CartItemWithDetails = {
   id: string;
   quantity: number;
@@ -11,7 +13,7 @@ export type CartItemWithDetails = {
     id: string;
     size: string;
     price: number;
-    stock: number; // <-- PENTING: Field ini ditambahkan untuk validasi di client
+    stock: number;
     products: {
       id: string;
       name: string;
@@ -20,7 +22,6 @@ export type CartItemWithDetails = {
   } | null;
 };
 
-// Fungsi untuk mengambil data keranjang
 async function getCartItems(): Promise<CartItemWithDetails[]> {
   const supabase = createSupabaseServerClient();
   const {
@@ -48,7 +49,6 @@ async function getCartItems(): Promise<CartItemWithDetails[]> {
       )
     `,
     )
-    // ^^^ 'stock' ditambahkan di query select di atas
     .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 
@@ -61,38 +61,29 @@ async function getCartItems(): Promise<CartItemWithDetails[]> {
   return data as CartItemWithDetails[];
 }
 
-// Komponen Halaman Keranjang (Server Component)
 export default async function CustomerCartPage() {
   const cartItems = await getCartItems();
 
   return (
-    <>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-black mb-2">Keranjang Belanja</h2>
-        <p className="text-gray-600">Periksa item Anda sebelum checkout</p>
-      </div>
-
-      {cartItems.length === 0 ? (
-        // Tampilan Keranjang Kosong
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="bg-gradient-to-br from-cyan-100 to-magenta-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-              <ShoppingCart className="h-12 w-12 text-black" />
-            </div>
-            <h3 className="text-2xl font-semibold text-black mb-3">
-              Keranjang Anda Kosong
-            </h3>
-            <p className="text-gray-600 leading-relaxed">
-              Sepertinya Anda belum menambahkan produk apapun ke keranjang.
-            </p>
+    // Background Gradient Konsisten
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+      <div className="container mx-auto max-w-[1400px] px-4 py-6">
+        
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+             <ShoppingCart className="h-6 w-6 text-[#E8207E]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Keranjang Belanja</h2>
+            <p className="text-sm text-gray-500">Periksa item Anda sebelum checkout</p>
           </div>
         </div>
-      ) : (
-        // Render Client Component dan teruskan data
-        <Suspense fallback={<div>Memuat keranjang...</div>}>
+
+        <Suspense fallback={<div className="text-center py-10 text-gray-500">Memuat keranjang...</div>}>
           <CartClient cartItems={cartItems} />
         </Suspense>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

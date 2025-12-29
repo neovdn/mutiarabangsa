@@ -15,7 +15,8 @@ import {
   Store,
   Search,
   Bell,
-  Settings
+  Settings,
+  Users // Update 1: Import Icon Users
 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { cn } from '@/lib/utils';
@@ -67,9 +68,12 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
     router.push('/login');
   };
 
+  // Update 2: Logika highlight menu Toko diperluas untuk mencakup user management
+  // Menggunakan startsWith agar tetap aktif saat masuk ke detail/edit
   const isTokoActive =
-    pathname === '/dashboard/admin/products' ||
-    pathname === '/dashboard/admin/stock';
+    pathname.startsWith('/dashboard/admin/products') ||
+    pathname.startsWith('/dashboard/admin/stock') ||
+    pathname.startsWith('/dashboard/admin/users');
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-sm border-b border-gray-100">
@@ -129,7 +133,7 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
                 <ChevronDown className="h-3 w-3 opacity-50" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-48">
+            <DropdownMenuContent align="center" className="w-56">
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/admin/products" className="cursor-pointer">
                   <Package className="mr-2 h-4 w-4 text-cyan-600" /> Produk
@@ -138,6 +142,13 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
               <DropdownMenuItem asChild>
                 <Link href="/dashboard/admin/stock" className="cursor-pointer">
                   <Warehouse className="mr-2 h-4 w-4 text-cyan-600" /> Stok Barang
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* Update 3: Tambah Menu User Management */}
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/admin/users" className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4 text-cyan-600" /> Manajemen User
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -285,6 +296,14 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
                           className="block py-2 text-sm text-gray-500 hover:text-cyan-600"
                         >
                           Stok Barang
+                        </Link>
+                        {/* Update 4: Menu Mobile User */}
+                        <Link
+                          href="/dashboard/admin/users"
+                          onClick={() => setIsSheetOpen(false)}
+                          className="block py-2 text-sm text-gray-500 hover:text-cyan-600"
+                        >
+                          Manajemen User
                         </Link>
                       </AccordionContent>
                     </AccordionItem>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -60,34 +60,49 @@ export function ReportsClient({
   
   const [startDate, setStartDate] = useState<Date>(new Date(initialStartDate));
   const [endDate, setEndDate] = useState<Date>(new Date(initialEndDate));
-  const [datePreset, setDatePreset] = useState('thisMonth');
+  
+  // FIX: Ubah default preset ke 'thisYear' agar sinkron dengan data awal server
+  const [datePreset, setDatePreset] = useState('thisYear');
 
   const handlePresetChange = (preset: string) => {
     setDatePreset(preset);
     const now = new Date();
+    let newStart = startDate;
+    let newEnd = endDate;
 
     switch (preset) {
       case 'thisWeek':
-        setStartDate(startOfWeek(now, { weekStartsOn: 1 }));
-        setEndDate(endOfWeek(now, { weekStartsOn: 1 }));
+        newStart = startOfWeek(now, { weekStartsOn: 1 });
+        newEnd = endOfWeek(now, { weekStartsOn: 1 });
         break;
       case 'thisMonth':
-        setStartDate(startOfMonth(now));
-        setEndDate(endOfMonth(now));
+        newStart = startOfMonth(now);
+        newEnd = endOfMonth(now);
         break;
       case 'lastMonth':
         const lastMonth = subMonths(now, 1);
-        setStartDate(startOfMonth(lastMonth));
-        setEndDate(endOfMonth(lastMonth));
+        newStart = startOfMonth(lastMonth);
+        newEnd = endOfMonth(lastMonth);
         break;
       case 'last3Months':
-        setStartDate(startOfMonth(subMonths(now, 2)));
-        setEndDate(endOfMonth(now));
+        newStart = startOfMonth(subMonths(now, 2));
+        newEnd = endOfMonth(now);
         break;
       case 'thisYear':
-        setStartDate(startOfYear(now));
-        setEndDate(endOfYear(now));
+        newStart = startOfYear(now);
+        newEnd = endOfYear(now);
         break;
+    }
+    
+    setStartDate(newStart);
+    setEndDate(newEnd);
+
+    // Otomatis refresh data saat preset berubah (kecuali custom)
+    if (preset !== 'custom') {
+        router.push(
+            `/dashboard/admin/reports?start=${newStart.toISOString()}&end=${newEnd.toISOString()}`
+          );
+        router.refresh();
     }
   };
 
@@ -114,14 +129,8 @@ export function ReportsClient({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-1 pt-2">
-        <h1 className="text-2xl font-bold text-gray-900">Laporan & Analisis</h1>
-        <p className="text-sm text-gray-500">
-          Pantau performa toko dan analisis data penjualan Anda
-        </p>
-      </div>
-
+      {/* FIX: Header dihapus sesuai permintaan */}
+      
       {/* Filter Toolbar */}
       <Card className="border-gray-100 shadow-sm bg-white">
         <CardContent className="p-4">

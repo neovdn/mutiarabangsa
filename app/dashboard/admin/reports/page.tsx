@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { ReportsClient } from './reports-client';
 import { Toaster } from '@/components/ui/toaster';
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +10,7 @@ async function getSalesData(startDate: Date, endDate: Date) {
   const supabase = createSupabaseServerClient();
 
   // Data penjualan per hari
+  // NOTE: Pastikan data di database memiliki status 'completed', 'shipped', atau 'processing'
   const { data: dailySales, error: salesError } = await supabase
     .from('orders')
     .select('created_at, total_amount, status')
@@ -71,10 +72,15 @@ async function getTopProducts(startDate: Date, endDate: Date) {
   const productMap = new Map();
 
   data?.forEach((item: any) => {
-    const product = item.product_variants?.products;
+    // Pastikan struktur data valid
+    const variant = item.product_variants;
+    const product = variant?.products;
+    
     if (!product) return;
 
-    const key = product.id;
+    // Gunakan ID Variant atau ID Produk sebagai key (disini pakai ID produk untuk group per produk)
+    const key = product.id; 
+    
     if (!productMap.has(key)) {
       productMap.set(key, {
         id: product.id,
@@ -90,7 +96,6 @@ async function getTopProducts(startDate: Date, endDate: Date) {
     existing.totalRevenue += item.quantity * item.price_at_purchase;
   });
 
-  // Sort by quantity
   return Array.from(productMap.values())
     .sort((a, b) => b.totalQuantity - a.totalQuantity)
     .slice(0, 10);
@@ -191,11 +196,22 @@ async function getTopCategories(startDate: Date, endDate: Date) {
     .slice(0, 5);
 }
 
-export default async function AdminReportsPage() {
-  // Default: bulan ini
+export default async function AdminReportsPage({
+  searchParams,
+}: {
+  searchParams: { start?: string; end?: string };
+}) {
   const now = new Date();
-  const startDate = startOfMonth(now);
-  const endDate = endOfMonth(now);
+  
+  // LOGIC FIX: Default ke Tahun Ini (startOfYear) agar data lama terlihat, bukan Bulan Ini
+  // Kecuali user memilih tanggal spesifik via filter
+  const startDate = searchParams.start 
+    ? new Date(searchParams.start) 
+    : startOfYear(now);
+    
+  const endDate = searchParams.end 
+    ? new Date(searchParams.end) 
+    : endOfYear(now);
 
   const [salesData, topProducts, stockData, topCategories] = await Promise.all([
     getSalesData(startDate, endDate),
@@ -204,19 +220,18 @@ export default async function AdminReportsPage() {
     getTopCategories(startDate, endDate),
   ]);
 
+  // LAYOUT FIX: Menghapus div wrapper -m-8 (negative margin) yang membuat layout melebar aneh
   return (
-    <div className="-m-8 w-[calc(100%+4rem)] min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-8 pb-8 pt-2">
-      <div className="container mx-auto max-w-[1600px]">
-        <ReportsClient
-          initialSalesData={salesData}
-          initialTopProducts={topProducts}
-          initialStockData={stockData}
-          initialTopCategories={topCategories}
-          initialStartDate={startDate.toISOString()}
-          initialEndDate={endDate.toISOString()}
-        />
-        <Toaster />
-      </div>
+    <div className="space-y-6">
+      <ReportsClient
+        initialSalesData={salesData}
+        initialTopProducts={topProducts}
+        initialStockData={stockData}
+        initialTopCategories={topCategories}
+        initialStartDate={startDate.toISOString()}
+        initialEndDate={endDate.toISOString()}
+      />
+      <Toaster />
     </div>
   );
 }

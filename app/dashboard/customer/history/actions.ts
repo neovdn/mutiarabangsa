@@ -53,3 +53,55 @@ export async function buyAgain(orderId: string) {
     return { success: false, message: error.message };
   }
 }
+
+export async function completeOrder(orderId: string) {
+  const supabase = createSupabaseServerClient();
+
+  // 1. Cek User Auth
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, message: 'Unauthorized' };
+  }
+
+  try {
+    // 2. Verifikasi kepemilikan pesanan dan status saat ini
+    // Kita hanya boleh mengubah status jika status saat ini 'shipped'
+    const { data: order, error: fetchError } = await supabase
+      .from('orders')
+      .select('status')
+      .eq('id', orderId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError || !order) {
+      return { success: false, message: 'Pesanan tidak ditemukan.' };
+    }
+
+    if (order.status !== 'shipped') {
+      return { success: false, message: 'Status pesanan tidak valid untuk diselesaikan.' };
+    }
+
+    // 3. Update status menjadi completed
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ 
+        status: 'completed',
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', orderId)
+      .eq('user_id', user.id); // Double check ownership
+
+    if (updateError) {
+      console.error('Error updating order:', updateError);
+      return { success: false, message: 'Gagal mengupdate status pesanan.' };
+    }
+
+    // 4. Revalidate halaman agar UI berubah otomatis
+    revalidatePath('/dashboard/customer/history');
+    return { success: true, message: 'Pesanan berhasil diselesaikan.' };
+
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return { success: false, message: 'Terjadi kesalahan sistem.' };
+  }
+}

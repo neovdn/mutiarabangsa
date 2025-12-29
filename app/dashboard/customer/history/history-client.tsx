@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingBag, Calendar as CalendarIcon, Clock, Filter, X, ChevronRight, Star } from 'lucide-react';
+import { Search, ShoppingBag, Calendar as CalendarIcon, Clock, Filter, X, ChevronRight, Star, CheckCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { OrderWithDetails } from '@/types/order';
 import { formatCurrency, cn } from '@/lib/utils';
-import { buyAgain } from './actions';
+import { buyAgain, completeOrder } from './actions';
 import { TransactionDetailDialog } from './transaction-detail-dialog';
 import { ReviewDialog } from './review-dialog';
 import { Calendar } from '@/components/ui/calendar';
@@ -37,6 +37,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   
   const [isLoadingBuyAgain, setIsLoadingBuyAgain] = useState<string | null>(null);
+  const [isLoadingComplete, setIsLoadingComplete] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -100,6 +101,21 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
       toast({ title: "Gagal", description: result.message, variant: "destructive" });
     }
     setIsLoadingBuyAgain(null);
+  };
+
+  const handleCompleteOrder = async (orderId: string) => {
+    if(!confirm("Apakah Anda yakin pesanan sudah diterima dengan baik?")) return;
+
+    setIsLoadingComplete(orderId);
+    const result = await completeOrder(orderId);
+    
+    if (result.success) {
+      toast({ title: "Pesanan Selesai", description: "Terima kasih telah berbelanja!" });
+      router.refresh();
+    } else {
+      toast({ title: "Gagal", description: result.message, variant: "destructive" });
+    }
+    setIsLoadingComplete(null);
   };
 
   const handleShowDetail = (order: OrderWithDetails) => {
@@ -307,6 +323,22 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
                                         onClick={() => handlePayNow(order.id)}
                                     >
                                         Bayar Sekarang
+                                    </Button>
+                                ) : order.status === 'shipped' ? (
+                                    <Button 
+                                        size="sm"
+                                        className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm flex items-center gap-1.5"
+                                        onClick={() => handleCompleteOrder(order.id)}
+                                        disabled={isLoadingComplete === order.id}
+                                    >
+                                        {isLoadingComplete === order.id ? (
+                                            <span className="animate-pulse">Memproses...</span>
+                                        ) : (
+                                            <>
+                                              <CheckCircle className="h-3.5 w-3.5" />
+                                              Pesanan Diterima
+                                            </>
+                                        )}
                                     </Button>
                                 ) : order.status === 'completed' ? (
                                     <>

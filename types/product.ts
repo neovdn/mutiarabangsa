@@ -31,6 +31,16 @@ export interface Review {
   };
 }
 
+export interface Product {
+  id: string;
+  category_id: string | null;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProductWithDetails {
   id: string;
   category_id: string | null;

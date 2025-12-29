@@ -30,7 +30,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; // Pastikan import ini ada
+} from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -47,13 +47,12 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   
   const [isLoadingBuyAgain, setIsLoadingBuyAgain] = useState<string | null>(null);
-  const [isLoadingComplete, setIsLoadingComplete] = useState(false); // Loading state untuk dialog
+  const [isLoadingComplete, setIsLoadingComplete] = useState(false);
   
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   
-  // State baru untuk menyimpan ID pesanan yang akan dikonfirmasi
   const [orderToComplete, setOrderToComplete] = useState<string | null>(null);
 
   const statusOptions = [
@@ -117,12 +116,10 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
     setIsLoadingBuyAgain(null);
   };
 
-  // Function trigger saat tombol diklik (hanya membuka modal)
   const initiateCompleteOrder = (orderId: string) => {
     setOrderToComplete(orderId);
   };
 
-  // Function eksekusi setelah konfirmasi di modal
   const confirmCompleteOrder = async () => {
     if (!orderToComplete) return;
 
@@ -132,7 +129,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
     if (result.success) {
       toast({ title: "Pesanan Selesai", description: "Terima kasih telah berbelanja!" });
       router.refresh();
-      setOrderToComplete(null); // Tutup modal hanya jika sukses
+      setOrderToComplete(null);
     } else {
       toast({ title: "Gagal", description: result.message, variant: "destructive" });
     }
@@ -356,14 +353,17 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
                                     </Button>
                                 ) : order.status === 'completed' ? (
                                     <>
-                                        <Button 
-                                            size="sm"
-                                            className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-sm flex items-center gap-1"
-                                            onClick={() => handleOpenReview(order)}
-                                        >
-                                            <Star className="h-3 w-3" />
-                                            Beri Rating
-                                        </Button>
+                                        {/* Hanya tampilkan tombol rating jika masih ada item yang belum direview */}
+                                        {!order.order_items.every((item: any) => item.is_reviewed) && (
+                                            <Button 
+                                                size="sm"
+                                                className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-sm flex items-center gap-1"
+                                                onClick={() => handleOpenReview(order)}
+                                            >
+                                                <Star className="h-3 w-3" />
+                                                Beri Rating
+                                            </Button>
+                                        )}
                                         <Button 
                                             size="sm"
                                             className="h-8 text-xs bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shadow-sm"

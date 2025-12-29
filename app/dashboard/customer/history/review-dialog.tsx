@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
-import { Star, Loader2 } from 'lucide-react';
+import { Star, Loader2, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -115,11 +115,20 @@ export function ReviewDialog({ isOpen, onOpenChange, order }: ReviewDialogProps)
                 const product = item.product_variants?.products;
                 if (!product) return null;
 
+                // Mengambil status is_reviewed (casting any karena type mungkin belum diupdate di frontend types)
+                const isReviewed = (item as any).is_reviewed;
+
                 return (
                   <button
                     key={item.id}
-                    onClick={() => handleProductSelect(product.id)}
-                    className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-[#E8207E] hover:bg-[#E8207E]/5 transition-all text-left group"
+                    disabled={isReviewed}
+                    onClick={() => !isReviewed && handleProductSelect(product.id)}
+                    className={cn(
+                      "w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left group transition-all",
+                      isReviewed 
+                        ? "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed" 
+                        : "border-gray-100 hover:border-[#E8207E] hover:bg-[#E8207E]/5"
+                    )}
                   >
                     <div className="relative h-16 w-16 flex-shrink-0 rounded-lg border bg-gray-50 overflow-hidden">
                       <Image
@@ -133,9 +142,16 @@ export function ReviewDialog({ isOpen, onOpenChange, order }: ReviewDialogProps)
                       <h4 className="font-bold text-gray-900 text-sm line-clamp-2 group-hover:text-[#E8207E] transition-colors">
                         {product.name}
                       </h4>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Size: {item.product_variants?.size} • Qty: {item.quantity}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-500">
+                            Size: {item.product_variants?.size} • Qty: {item.quantity}
+                        </p>
+                        {isReviewed && (
+                           <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px] h-5 px-1.5 border-green-200">
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> Sudah Diulas
+                           </Badge>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );

@@ -23,6 +23,7 @@ async function getOrderHistory(): Promise<OrderWithDetails[]> {
         product_variants (
           size,
           products (
+            id,
             name,
             image_url
           )

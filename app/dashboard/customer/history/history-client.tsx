@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingBag, Calendar as CalendarIcon, Clock, Filter, X, ChevronRight, Star, CheckCircle } from 'lucide-react';
+import { Search, ShoppingBag, Calendar as CalendarIcon, Filter, Star, CheckCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -21,6 +21,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"; // Pastikan import ini ada
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -37,10 +47,14 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
   const [date, setDate] = useState<Date | undefined>(undefined);
   
   const [isLoadingBuyAgain, setIsLoadingBuyAgain] = useState<string | null>(null);
-  const [isLoadingComplete, setIsLoadingComplete] = useState<string | null>(null);
+  const [isLoadingComplete, setIsLoadingComplete] = useState(false); // Loading state untuk dialog
+  
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  
+  // State baru untuk menyimpan ID pesanan yang akan dikonfirmasi
+  const [orderToComplete, setOrderToComplete] = useState<string | null>(null);
 
   const statusOptions = [
     { id: 'all', label: 'Semua Status' },
@@ -103,19 +117,26 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
     setIsLoadingBuyAgain(null);
   };
 
-  const handleCompleteOrder = async (orderId: string) => {
-    if(!confirm("Apakah Anda yakin pesanan sudah diterima dengan baik?")) return;
+  // Function trigger saat tombol diklik (hanya membuka modal)
+  const initiateCompleteOrder = (orderId: string) => {
+    setOrderToComplete(orderId);
+  };
 
-    setIsLoadingComplete(orderId);
-    const result = await completeOrder(orderId);
+  // Function eksekusi setelah konfirmasi di modal
+  const confirmCompleteOrder = async () => {
+    if (!orderToComplete) return;
+
+    setIsLoadingComplete(true);
+    const result = await completeOrder(orderToComplete);
     
     if (result.success) {
       toast({ title: "Pesanan Selesai", description: "Terima kasih telah berbelanja!" });
       router.refresh();
+      setOrderToComplete(null); // Tutup modal hanya jika sukses
     } else {
       toast({ title: "Gagal", description: result.message, variant: "destructive" });
     }
-    setIsLoadingComplete(null);
+    setIsLoadingComplete(false);
   };
 
   const handleShowDetail = (order: OrderWithDetails) => {
@@ -328,17 +349,10 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
                                     <Button 
                                         size="sm"
                                         className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm flex items-center gap-1.5"
-                                        onClick={() => handleCompleteOrder(order.id)}
-                                        disabled={isLoadingComplete === order.id}
+                                        onClick={() => initiateCompleteOrder(order.id)}
                                     >
-                                        {isLoadingComplete === order.id ? (
-                                            <span className="animate-pulse">Memproses...</span>
-                                        ) : (
-                                            <>
-                                              <CheckCircle className="h-3.5 w-3.5" />
-                                              Pesanan Diterima
-                                            </>
-                                        )}
+                                        <CheckCircle className="h-3.5 w-3.5" />
+                                        Pesanan Diterima
                                     </Button>
                                 ) : order.status === 'completed' ? (
                                     <>
@@ -399,6 +413,40 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
         onOpenChange={setIsReviewOpen} 
         order={selectedOrder}
       />
+
+      {/* DIALOG KONFIRMASI PESANAN DITERIMA */}
+      <AlertDialog open={!!orderToComplete} onOpenChange={(open) => !open && !isLoadingComplete && setOrderToComplete(null)}>
+        <AlertDialogContent className="rounded-2xl max-w-sm">
+          <AlertDialogHeader>
+            <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+               <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <AlertDialogTitle className="text-center">Pesanan Sudah Diterima?</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Pastikan Anda sudah mengecek kelengkapan dan kondisi barang. Status pesanan akan diubah menjadi <span className="font-bold text-gray-900">Selesai</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center gap-2">
+            <AlertDialogCancel 
+              disabled={isLoadingComplete} 
+              className="rounded-xl border-gray-200"
+            >
+              Cek Lagi
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              disabled={isLoadingComplete}
+              onClick={(e) => {
+                e.preventDefault(); // Mencegah dialog tertutup otomatis sebelum proses selesai
+                confirmCompleteOrder();
+              }}
+              className="rounded-xl bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto min-w-[100px]"
+            >
+              {isLoadingComplete ? "Memproses..." : "Ya, Sudah"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

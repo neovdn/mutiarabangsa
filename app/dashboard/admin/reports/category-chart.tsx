@@ -25,24 +25,18 @@ export function CategoryChart({ categories }: CategoryChartProps) {
     name: cat.name,
     value: cat.totalRevenue,
     color: COLORS[index % COLORS.length],
-    percentage: 0, // akan dihitung di custom label
   }));
 
-  // Hitung total untuk persentase
-  const total = chartData.reduce((sum, item) => sum + item.value, 0);
-
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={350}>
       <PieChart>
         <Pie
           data={chartData}
           cx="50%"
-          cy="50%"
+          cy="45%" // Naikkan sedikit agar muat Legend di bawah
           labelLine={false}
-          label={({ name, value }) => {
-            const percent = ((value / total) * 100).toFixed(1);
-            return `${name} (${percent}%)`;
-          }}
+          // Hapus label props yang bikin teks hilang/tabrakan
+          // Kita ganti dengan Legend di bawah
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"
@@ -60,6 +54,14 @@ export function CategoryChart({ categories }: CategoryChartProps) {
             padding: '8px 12px',
           }}
           formatter={(value: any) => [formatCurrency(value), 'Pendapatan']}
+        />
+        <Legend 
+          verticalAlign="bottom" 
+          height={36} 
+          iconType="circle"
+          formatter={(value, entry: any) => (
+            <span className="text-xs text-gray-600 font-medium ml-1">{value}</span>
+          )}
         />
       </PieChart>
     </ResponsiveContainer>

@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 // Pastikan env variable terbaca
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Pakai Service Role agar bisa baca semua data
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function POST(req: Request) {
@@ -21,79 +21,94 @@ export async function POST(req: Request) {
     
     const { message, history } = await req.json();
 
-    // --- FIX UTAMA DISINI ---
+    // --- FIX HISTORY ---
     // Gemini mewajibkan history dimulai dengan 'user'. 
     // Kita hapus pesan pertama jika itu dari 'model' (sapaan awal bot).
     let cleanHistory = history || [];
     if (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
       cleanHistory = cleanHistory.slice(1);
     }
-    // ------------------------
 
-    // 2. Ambil Data Produk
+    // 2. Ambil Data Produk (+ image_url dan id)
     const { data: products, error } = await supabase
       .from("products")
       .select(`
         id,
         name,
         description,
+        image_url, 
         categories (name),
         product_variants (size, price, stock)
       `);
 
     if (error) {
-      console.error("Supabase Error:", error.message);
-      throw new Error(`Gagal mengambil data produk: ${error.message}`);
+        console.error("Supabase Error:", error);
+        throw new Error(`Database Error: ${error.message}`);
     }
 
-    // 3. Format Data Context
+    // 3. Format Data Context untuk AI
     const productContext = products?.map((p: any) => {
-      const categoryName = Array.isArray(p.categories) 
-        ? p.categories[0]?.name 
-        : p.categories?.name;
-
-      const variantsInfo = p.product_variants && p.product_variants.length > 0
-        ? p.product_variants.map((v: any) => 
-            `- Ukuran: ${v.size}, Harga: Rp${v.price.toLocaleString('id-ID')}, Stok: ${v.stock}`
-          ).join("\n")
-        : "- Belum ada varian/stok";
+      const category = Array.isArray(p.categories) ? p.categories[0]?.name : p.categories?.name;
       
-      return `
-[PRODUK]
-Nama: ${p.name}
-Kategori: ${categoryName || "Umum"}
-Deskripsi: ${p.description || "-"}
-Varian & Stok:
-${variantsInfo}
-`;
-    }).join("\n\n");
+      // Hitung harga terendah untuk display "Mulai Rp..."
+      const minPrice = p.product_variants?.length > 0 
+        ? Math.min(...p.product_variants.map((v: any) => v.price))
+        : 0;
+      
+      const variantsInfo = p.product_variants?.map((v: any) => 
+         `${v.size} (Rp${v.price.toLocaleString('id-ID')}, Stok: ${v.stock})`
+      ).join(", ");
 
-    // 4. Prompt System
+      // Kita berikan 'Raw Data' yang lengkap ke AI
+      return `
+ID: ${p.id}
+Nama: ${p.name}
+Kategori: ${category || "Umum"}
+Harga_Mulai: ${minPrice}
+Gambar: ${p.image_url || ""}
+Deskripsi: ${p.description || "-"}
+Varian: ${variantsInfo}
+`;
+    }).join("\n---\n");
+
+    // 4. System Instruction (Prompt Engineering)
     const systemInstruction = `
       Kamu adalah "Mono", asisten AI ramah untuk toko "Mutiara Bangsa" (Toko Seragam & Perlengkapan Sekolah).
       
-      TUGAS KAMU:
-      1. Menjawab pertanyaan pelanggan tentang ketersediaan stok, harga, dan ukuran berdasarkan DATA PRODUK di bawah.
-      2. Jika stok produk habis (0), katakan dengan jujur bahwa stok sedang kosong.
-      3. Jangan pernah mengarang data produk yang tidak ada di daftar.
-      4. Jawablah dengan bahasa Indonesia yang santai, sopan, dan membantu.
-      5. Jika ditanya harga, formatlah menjadi Rupiah (contoh: Rp 50.000).
-      6. Jika pertanyaannya di luar konteks produk, jawab dengan sopan bahwa kamu hanya bisa membantu soal produk toko.
-      7. Gunakan **Bold** untuk nama produk atau harga agar jelas.
-      8. Gunakan list (bullet points) jika menyebutkan lebih dari satu item.
+      TUGAS UTAMA:
+      1. Menjawab pertanyaan pelanggan tentang ketersediaan stok, harga, dan ukuran.
+      2. MEMBERIKAN KARTU PRODUK jika merekomendasikan atau menyebutkan produk spesifik.
+      
+      ATURAN FORMAT KARTU PRODUK:
+      Setiap kali kamu menyebutkan produk yang tersedia, WAJIB sertakan kode khusus ini di baris baru:
+      [[PRODUCT|ID_PRODUK|NAMA_PRODUK|HARGA_MULAI|URL_GAMBAR]]
+      
+      Contoh Jawaban Benar:
+      "Kami punya Seragam SD Merah Putih yang bahannya adem, Kak.
+      [[PRODUCT|123-abc-456|Seragam SD Merah Putih|50000|https://contoh.com/img.jpg]]
+      Ada ukuran L dan XL lho."
 
-      DATA PRODUK TOKO (Update Real-time):
+      ATURAN LAIN:
+      - Jika stok produk habis (0), katakan stok kosong.
+      - Jangan mengarang data produk.
+      - Jawablah dengan bahasa Indonesia yang santai, sopan, dan membantu.
+      - Jika URL gambar kosong, biarkan bagian URL di kode produk kosong atau isi "undefined".
+      - Jangan pernah mengarang data produk yang tidak ada di daftar.
+      - Jika pertanyaannya di luar konteks produk, jawab dengan sopan bahwa kamu hanya bisa membantu soal produk toko.
+
+      DATA PRODUK TOKO (Real-time):
       ${productContext || "Belum ada data produk."}
     `;
 
-    // 5. Eksekusi Gemini dengan History yang sudah dibersihkan
+    // 5. Eksekusi Gemini
+    // Menggunakan model stabil 'gemini-1.5-flash'
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       systemInstruction: systemInstruction,
     });
 
     const chat = model.startChat({
-      history: cleanHistory, // Gunakan history yang sudah divalidasi
+      history: cleanHistory,
     });
 
     const result = await chat.sendMessage(message);

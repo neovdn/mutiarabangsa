@@ -35,6 +35,7 @@ export type OrderItemWithDetails = OrderItem & {
       image_url: string | null;
     } | null;
   } | null;
+  is_reviewed?: boolean;
 };
 
 export interface OrderWithDetails extends Order {

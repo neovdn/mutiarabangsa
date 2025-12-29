@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Star } from 'lucide-react';
 import { ProductWithDetails } from '@/types/product';
 
 const formatCurrency = (amount: number) => {
@@ -47,6 +47,13 @@ interface ProductCardProps {
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const stockInfo = getStockInfo(product.product_variants);
 
+  // Hitung rata-rata rating dari reviews
+  const averageRating = product.reviews && product.reviews.length > 0
+    ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+    : 0;
+
+  const reviewCount = product.reviews?.length || 0;
+
   return (
     <Card className="flex flex-col h-full overflow-hidden group border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white">
       
@@ -81,7 +88,19 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           {product.name}
         </h3>
 
-        {/* --- PERBAIKAN: Menampilkan Deskripsi Produk --- */}
+        {/* Rating Display */}
+        {reviewCount > 0 && (
+          <div className="flex items-center gap-1 mb-1">
+            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+            <span className="text-xs font-bold text-gray-700">
+              {averageRating.toFixed(1)}
+            </span>
+            <span className="text-[10px] text-gray-400">
+              ({reviewCount} ulasan)
+            </span>
+          </div>
+        )}
+
         <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-2">
            {product.description || 'Tidak ada deskripsi.'}
         </p>

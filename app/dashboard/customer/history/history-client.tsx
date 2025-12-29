@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingBag, Calendar as CalendarIcon, Clock, Filter, X, ChevronRight } from 'lucide-react';
+import { Search, ShoppingBag, Calendar as CalendarIcon, Clock, Filter, X, ChevronRight, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { OrderWithDetails } from '@/types/order';
 import { formatCurrency, cn } from '@/lib/utils';
 import { buyAgain } from './actions';
 import { TransactionDetailDialog } from './transaction-detail-dialog';
+import { ReviewDialog } from './review-dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -38,6 +39,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
   const [isLoadingBuyAgain, setIsLoadingBuyAgain] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const statusOptions = [
     { id: 'all', label: 'Semua Status' },
@@ -52,10 +54,10 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending_payment': return 'destructive';
-      case 'waiting_confirmation': return 'warning'; // Custom class handling below
-      case 'processing': return 'default'; // Blue/Primary
+      case 'waiting_confirmation': return 'warning';
+      case 'processing': return 'default';
       case 'shipped': return 'secondary';
-      case 'completed': return 'outline'; // Green handling below
+      case 'completed': return 'outline';
       default: return 'secondary';
     }
   };
@@ -115,10 +117,15 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
     setDate(undefined);
   };
 
+  const handleOpenReview = (order: OrderWithDetails) => {
+    setSelectedOrder(order);
+    setIsReviewOpen(true);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       
-      {/* 1. SEARCH BAR (ATAS - Full Width) */}
+      {/* SEARCH BAR */}
       <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
          <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -133,7 +140,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         
-        {/* 2. SIDEBAR FILTER (KIRI - Sticky) */}
+        {/* SIDEBAR FILTER */}
         <aside className="w-full lg:w-64 flex-shrink-0 lg:sticky lg:top-24 space-y-4">
            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -191,7 +198,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
            </div>
         </aside>
 
-        {/* 3. MAIN CONTENT (KANAN - List Transaksi) */}
+        {/* MAIN CONTENT */}
         <div className="flex-1 w-full min-w-0">
            <div className="mb-3 flex items-center justify-between px-1">
               <p className="text-xs text-gray-500 font-medium">
@@ -274,7 +281,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
                                         )}
                                     </div>
 
-                                    {/* Total & Harga - Pindah ke kanan utk desktop */}
+                                    {/* Total & Harga */}
                                     <div className="text-center sm:text-right pl-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-gray-100 pt-3 sm:pt-0 w-full sm:w-auto mt-2 sm:mt-0">
                                         <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Total Belanja</p>
                                         <p className="font-bold text-[#E8207E] text-base">{formatCurrency(order.total_amount)}</p>
@@ -283,7 +290,7 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
                             </CardContent>
 
                             {/* Footer Card (Actions) */}
-                            <CardFooter className="p-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                            <CardFooter className="p-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 flex-wrap">
                                 <Button 
                                     variant="ghost" 
                                     size="sm" 
@@ -301,6 +308,29 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
                                     >
                                         Bayar Sekarang
                                     </Button>
+                                ) : order.status === 'completed' ? (
+                                    <>
+                                        <Button 
+                                            size="sm"
+                                            className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-sm flex items-center gap-1"
+                                            onClick={() => handleOpenReview(order)}
+                                        >
+                                            <Star className="h-3 w-3" />
+                                            Beri Rating
+                                        </Button>
+                                        <Button 
+                                            size="sm"
+                                            className="h-8 text-xs bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg shadow-sm"
+                                            onClick={() => handleBuyAgain(order.id)}
+                                            disabled={isLoadingBuyAgain === order.id}
+                                        >
+                                            {isLoadingBuyAgain === order.id ? (
+                                                <span className="animate-pulse">Memproses...</span>
+                                            ) : (
+                                                'Beli Lagi'
+                                            )}
+                                        </Button>
+                                    </>
                                 ) : (
                                     order.status !== 'waiting_confirmation' && (
                                         <Button 
@@ -329,6 +359,12 @@ export function HistoryClient({ initialOrders }: HistoryClientProps) {
       <TransactionDetailDialog 
         isOpen={isDetailOpen} 
         onOpenChange={setIsDetailOpen} 
+        order={selectedOrder}
+      />
+
+      <ReviewDialog 
+        isOpen={isReviewOpen} 
+        onOpenChange={setIsReviewOpen} 
         order={selectedOrder}
       />
     </div>

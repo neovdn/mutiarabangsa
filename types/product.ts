@@ -1,15 +1,13 @@
-import { Profile } from './user';
+// types/product.ts
 
-// Berdasarkan tabel public.categories
 export interface Category {
   id: string;
   name: string;
   description: string | null;
   created_at: string;
-  parent_id: string | null; // <-- TAMBAHKAN BARIS INI
+  parent_id: string | null;
 }
 
-// Berdasarkan tabel public.product_variants
 export interface ProductVariant {
   id: string;
   product_id: string;
@@ -20,19 +18,28 @@ export interface ProductVariant {
   created_at: string;
 }
 
-// Berdasarkan tabel public.products
-export interface Product {
+export interface Review {
+  id: string;
+  user_id: string;
+  product_id: string;
+  order_id: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  profiles?: {
+    full_name: string;
+  };
+}
+
+export interface ProductWithDetails {
   id: string;
   category_id: string | null;
   name: string;
   description: string | null;
   image_url: string | null;
   created_at: string;
-  updated_at: string | null;
-}
-
-// Tipe gabungan untuk mempermudah passing data
-export type ProductWithDetails = Product & {
+  updated_at: string;
   categories: Category | null;
   product_variants: ProductVariant[];
-};
+  reviews?: Review[];
+}

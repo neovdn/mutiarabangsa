@@ -9,7 +9,17 @@ async function getProducts(): Promise<ProductWithDetails[]> {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('products')
-    .select('*, categories(*), product_variants(*)')
+    .select(`
+      *,
+      categories(*),
+      product_variants(*),
+      reviews(
+        id,
+        rating,
+        comment,
+        created_at
+      )
+    `)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -38,9 +48,7 @@ export default async function CustomerCatalogPage() {
   const categories = await getCategories();
 
   return (
-    // Menggunakan Background Gradient Dashboard Customer
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-      {/* Padding atas dikurangi (py-4) agar search naik */}
       <div className="container mx-auto max-w-[1400px] px-4 py-4">
         <CatalogClient initialProducts={products} categories={categories} />
         <Toaster />

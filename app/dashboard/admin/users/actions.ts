@@ -23,7 +23,7 @@ const userFormSchema = z.object({
   email: z.string().email('Email tidak valid'),
   full_name: z.string().min(2, 'Nama lengkap minimal 2 karakter'),
   role: z.enum(['admin', 'customer']),
-  password: z.string().min(6, 'Password minimal 6 karakter').optional(),
+  password: z.string().min(6, 'Password minimal 6 karakter').optional().or(z.literal('')),
   no_telpon: z.string().optional(),
   address_street: z.string().optional(),
   address_city: z.string().optional(),

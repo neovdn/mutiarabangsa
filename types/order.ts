@@ -30,6 +30,7 @@ export type OrderItemWithDetails = OrderItem & {
   product_variants: {
     size: string;
     products: {
+      id: string;
       name: string;
       image_url: string | null;
     } | null;

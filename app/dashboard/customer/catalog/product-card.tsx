@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link'; // <--- 1. Import Link
 import {
   Card,
   CardContent,
@@ -47,18 +48,20 @@ interface ProductCardProps {
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const stockInfo = getStockInfo(product.product_variants);
 
-  // Hitung rata-rata rating dari reviews
   const averageRating = product.reviews && product.reviews.length > 0
     ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
     : 0;
 
   const reviewCount = product.reviews?.length || 0;
 
+  // URL halaman detail produk
+  const detailUrl = `/dashboard/customer/catalog/products/${product.id}`;
+
   return (
     <Card className="flex flex-col h-full overflow-hidden group border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white">
       
-      {/* Gambar Produk */}
-      <div className="relative aspect-square bg-gray-50 overflow-hidden">
+      {/* 2. Bungkus Gambar dengan Link */}
+      <Link href={detailUrl} className="block relative aspect-square bg-gray-50 overflow-hidden cursor-pointer">
         <Image
           src={product.image_url || '/img/placeholder.png'}
           alt={product.name}
@@ -73,7 +76,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </Badge>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Konten Kartu */}
       <CardContent className="p-3 flex-1 flex flex-col gap-1">
@@ -81,16 +84,19 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
            {product.categories?.name || 'Lainnya'}
         </div>
         
-        <h3 
-          className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight min-h-[2.5em] mb-1"
-          title={product.name}
-        >
-          {product.name}
-        </h3>
+        {/* 3. Bungkus Judul dengan Link */}
+        <Link href={detailUrl} className="block group-hover:text-[#E8207E] transition-colors">
+          <h3 
+            className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight min-h-[2.5em] mb-1"
+            title={product.name}
+          >
+            {product.name}
+          </h3>
+        </Link>
 
-        {/* Rating Display */}
+        {/* Rating Display (Bisa diklik juga) */}
         {reviewCount > 0 && (
-          <div className="flex items-center gap-1 mb-1">
+          <Link href={detailUrl} className="flex items-center gap-1 mb-1 w-fit cursor-pointer hover:opacity-80">
             <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
             <span className="text-xs font-bold text-gray-700">
               {averageRating.toFixed(1)}
@@ -98,7 +104,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             <span className="text-[10px] text-gray-400">
               ({reviewCount} ulasan)
             </span>
-          </div>
+          </Link>
         )}
 
         <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-2">
@@ -118,7 +124,10 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           size="sm"
           className="w-full h-8 text-xs bg-[#E8207E] hover:bg-[#E8207E]/90 text-white font-medium rounded-lg shadow-none"
           disabled={stockInfo.isOutOfStock}
-          onClick={() => onAddToCart(product)}
+          onClick={(e) => {
+            e.preventDefault(); // Mencegah Link ter-trigger saat tombol ditekan
+            onAddToCart(product);
+          }}
         >
           <ShoppingCart className="h-3 w-3 mr-1.5" />
           {stockInfo.isOutOfStock ? 'Habis' : 'Beli'}

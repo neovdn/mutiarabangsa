@@ -38,6 +38,8 @@ import { StockTable } from './stock-table';
 import { CategoryChart } from './category-chart';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+// Import fungsi generator laporan
+import { generateExcel, generatePDF } from './report-generator';
 
 interface ReportsClientProps {
   initialSalesData: any;
@@ -112,17 +114,65 @@ export function ReportsClient({
   };
 
   const handleExportPDF = () => {
-    toast({
-      title: 'Export PDF',
-      description: 'Laporan sedang disiapkan untuk diunduh (PDF)...',
-    });
+    try {
+      toast({
+        title: 'Memproses PDF...',
+        description: 'Laporan sedang dibuat. File akan terunduh otomatis.',
+      });
+
+      generatePDF({
+        salesData: initialSalesData,
+        topProducts: initialTopProducts,
+        stockData: initialStockData,
+        topCategories: initialTopCategories,
+        startDate,
+        endDate,
+      });
+
+      toast({
+        title: 'Berhasil',
+        description: 'Laporan PDF berhasil diunduh.',
+        className: "bg-green-50 border-green-200 text-green-700"
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: 'Gagal',
+        description: 'Terjadi kesalahan saat membuat PDF.',
+      });
+    }
   };
 
   const handleExportExcel = () => {
-    toast({
-      title: 'Export Excel',
-      description: 'Laporan sedang disiapkan untuk diunduh (Excel)...',
-    });
+    try {
+      toast({
+        title: 'Memproses Excel...',
+        description: 'Menyiapkan workbook. File akan terunduh otomatis.',
+      });
+
+      generateExcel({
+        salesData: initialSalesData,
+        topProducts: initialTopProducts,
+        stockData: initialStockData,
+        topCategories: initialTopCategories,
+        startDate,
+        endDate,
+      });
+
+      toast({
+        title: 'Berhasil',
+        description: 'Laporan Excel berhasil diunduh.',
+        className: "bg-green-50 border-green-200 text-green-700"
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: 'Gagal',
+        description: 'Terjadi kesalahan saat membuat Excel.',
+      });
+    }
   };
 
   return (

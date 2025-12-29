@@ -1,29 +1,27 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import ChatWidget from "@/components/ai/ChatWidget"; // Import widget
+import './globals.css';
+import type { Metadata } from 'next';
+// Hapus import Inter
+// import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ["latin"] });
+// const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Toko Seragam Mutiara Bangsa",
-  description: "Sistem Informasi Penjualan Seragam Sekolah",
+  title: 'Mutiara Bangsa',
+  description:
+    'Website e-commerce untuk penjualan seragam dan perlengkapan sekolah',
+  icons: {
+    icon: '/img/MUTIARABANGSA.png',
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="id">
-      <body className={inter.className}>
-        {children}
-        <Toaster />
-        <ChatWidget />
-        
-      </body>
+    <html lang="en">
+      <body className="">{children}</body>
     </html>
   );
 }

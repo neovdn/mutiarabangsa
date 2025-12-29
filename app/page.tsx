@@ -9,6 +9,7 @@ import { FeaturedProducts } from '@/components/dashboard/featured-products';
 import { PromoBanner } from '@/components/dashboard/promo-banner';
 import { ProductWithDetails, Category } from '@/types/product';
 import { Order } from '@/types/order';
+import ChatWidget from '@/components/ai/ChatWidget';
 
 // Definisi tipe lokal untuk cart item (sesuai kebutuhan Navbar)
 type NavbarCartItem = {
@@ -139,6 +140,7 @@ export default async function HomePage() {
             <PromoBanner />
           </div>
         </div>
+        <ChatWidget />
       </main>
 
       <footer className="bg-white border-t py-8 text-center text-gray-500 text-sm">

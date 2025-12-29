@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { ProductWithDetails, Category } from '@/types/product';
 import { Toaster } from '@/components/ui/toaster';
 import { CatalogClient } from './catalog-client';
+import ChatWidget from '@/components/ai/ChatWidget';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,7 @@ export default async function CustomerCatalogPage() {
         <CatalogClient initialProducts={products} categories={categories} />
         <Toaster />
       </div>
+      <ChatWidget />
     </div>
   );
 }

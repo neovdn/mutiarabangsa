@@ -36,6 +36,36 @@ async function getProductDetail(productId: string) {
   return data;
 }
 
+// Fungsi Baru: Mengambil produk serupa berdasarkan kategori
+async function getRelatedProducts(currentProductId: string, categoryId: string | null) {
+  const supabase = createSupabaseServerClient();
+  
+  let query = supabase
+    .from('products')
+    .select(`
+      *,
+      categories(*),
+      product_variants(*),
+      reviews(rating)
+    `)
+    .neq('id', currentProductId) // Jangan tampilkan produk yang sedang dilihat
+    .limit(4); // Batasi 4 produk saja
+
+  // Jika ada kategori, filter berdasarkan kategori tersebut
+  if (categoryId) {
+    query = query.eq('category_id', categoryId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching related products:', error.message);
+    return [];
+  }
+
+  return data;
+}
+
 export default async function ProductDetailPage({ params }: PageProps) {
   const product = await getProductDetail(params.id);
 
@@ -43,11 +73,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  // Ambil produk terkait
+  const relatedProducts = await getRelatedProducts(params.id, product.category_id);
+
   return (
-    // Mengubah py-8 menjadi py-6 dan background lebih bersih
     <div className="bg-gray-50/50 min-h-screen">
-      <div className="container mx-auto max-w-6xl px-4 py-6">
-        <ProductDetailClient product={product} />
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        <ProductDetailClient 
+          product={product} 
+          relatedProducts={relatedProducts} // Oper data ke client
+        />
       </div>
     </div>
   );

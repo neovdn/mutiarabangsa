@@ -44,8 +44,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
-      <div className="container mx-auto max-w-[1400px] px-4 py-8">
+    // Mengubah py-8 menjadi py-6 dan background lebih bersih
+    <div className="bg-gray-50/50 min-h-screen">
+      <div className="container mx-auto max-w-6xl px-4 py-6">
         <ProductDetailClient product={product} />
       </div>
     </div>

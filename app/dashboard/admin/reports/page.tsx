@@ -9,8 +9,6 @@ export const dynamic = 'force-dynamic';
 async function getSalesData(startDate: Date, endDate: Date) {
   const supabase = createSupabaseServerClient();
 
-  // Data penjualan per hari
-  // NOTE: Pastikan data di database memiliki status 'completed', 'shipped', atau 'processing'
   const { data: dailySales, error: salesError } = await supabase
     .from('orders')
     .select('created_at, total_amount, status')
@@ -23,7 +21,6 @@ async function getSalesData(startDate: Date, endDate: Date) {
     return { dailySales: [], totalRevenue: 0, totalOrders: 0, avgOrderValue: 0 };
   }
 
-  // Hitung metrik
   const totalRevenue = dailySales?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
   const totalOrders = dailySales?.length || 0;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -36,7 +33,7 @@ async function getSalesData(startDate: Date, endDate: Date) {
   };
 }
 
-// Fungsi untuk mengambil produk terlaris
+// PERBAIKAN: Fungsi untuk mengambil produk terlaris dengan agregasi yang benar
 async function getTopProducts(startDate: Date, endDate: Date) {
   const supabase = createSupabaseServerClient();
 
@@ -45,10 +42,9 @@ async function getTopProducts(startDate: Date, endDate: Date) {
     .select(`
       quantity,
       price_at_purchase,
-      product_variants (
-        id,
-        size,
-        products (
+      product_variants!inner (
+        product_id,
+        products!inner (
           id,
           name,
           image_url
@@ -68,18 +64,15 @@ async function getTopProducts(startDate: Date, endDate: Date) {
     return [];
   }
 
-  // Agregasi data produk
+  // Agregasi data produk berdasarkan product_id
   const productMap = new Map();
 
   data?.forEach((item: any) => {
-    // Pastikan struktur data valid
-    const variant = item.product_variants;
-    const product = variant?.products;
+    const product = item.product_variants?.products;
     
     if (!product) return;
 
-    // Gunakan ID Variant atau ID Produk sebagai key (disini pakai ID produk untuk group per produk)
-    const key = product.id; 
+    const key = product.id;
     
     if (!productMap.has(key)) {
       productMap.set(key, {
@@ -98,7 +91,7 @@ async function getTopProducts(startDate: Date, endDate: Date) {
 
   return Array.from(productMap.values())
     .sort((a, b) => b.totalQuantity - a.totalQuantity)
-    .slice(0, 10);
+    .slice(0, 5); // Top 5 produk
 }
 
 // Fungsi untuk mengambil data stok
@@ -148,8 +141,8 @@ async function getTopCategories(startDate: Date, endDate: Date) {
     .select(`
       quantity,
       price_at_purchase,
-      product_variants (
-        products (
+      product_variants!inner (
+        products!inner (
           categories (
             id,
             name
@@ -203,8 +196,6 @@ export default async function AdminReportsPage({
 }) {
   const now = new Date();
   
-  // LOGIC FIX: Default ke Tahun Ini (startOfYear) agar data lama terlihat, bukan Bulan Ini
-  // Kecuali user memilih tanggal spesifik via filter
   const startDate = searchParams.start 
     ? new Date(searchParams.start) 
     : startOfYear(now);
@@ -220,18 +211,20 @@ export default async function AdminReportsPage({
     getTopCategories(startDate, endDate),
   ]);
 
-  // LAYOUT FIX: Menghapus div wrapper -m-8 (negative margin) yang membuat layout melebar aneh
+  // PERBAIKAN: Tambahkan background gradien & padding konsisten seperti halaman lain
   return (
-    <div className="space-y-6">
-      <ReportsClient
-        initialSalesData={salesData}
-        initialTopProducts={topProducts}
-        initialStockData={stockData}
-        initialTopCategories={topCategories}
-        initialStartDate={startDate.toISOString()}
-        initialEndDate={endDate.toISOString()}
-      />
-      <Toaster />
+    <div className="-m-8 w-[calc(100%+4rem)] min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-8 pb-8 pt-2">
+      <div className="container mx-auto max-w-[1400px]">
+        <ReportsClient
+          initialSalesData={salesData}
+          initialTopProducts={topProducts}
+          initialStockData={stockData}
+          initialTopCategories={topCategories}
+          initialStartDate={startDate.toISOString()}
+          initialEndDate={endDate.toISOString()}
+        />
+        <Toaster />
+      </div>
     </div>
   );
 }

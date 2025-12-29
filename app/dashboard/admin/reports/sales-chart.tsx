@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
@@ -39,9 +39,9 @@ export function SalesChart({ data }: SalesChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="h-80 flex items-center justify-center text-gray-400">
+      <div className="h-72 flex items-center justify-center text-gray-400">
         <div className="text-center">
-          <p className="text-lg font-medium">Tidak ada data penjualan</p>
+          <p className="text-base font-medium">Tidak ada data penjualan</p>
           <p className="text-sm">pada periode yang dipilih</p>
         </div>
       </div>
@@ -49,17 +49,26 @@ export function SalesChart({ data }: SalesChartProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={320}>
-      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+    <ResponsiveContainer width="100%" height={280}>
+      {/* PERBAIKAN: Gunakan AreaChart untuk visualisasi yang lebih modern */}
+      <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+        <defs>
+          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#0891b2" stopOpacity={0.3}/>
+            <stop offset="95%" stopColor="#0891b2" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
         <XAxis 
           dataKey="dateLabel" 
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 11 }}
           stroke="#888"
+          tickLine={false}
         />
         <YAxis 
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 11 }}
           stroke="#888"
+          tickLine={false}
           tickFormatter={(value) => {
             if (value >= 1000000) return `${(value / 1000000).toFixed(1)}jt`;
             if (value >= 1000) return `${(value / 1000).toFixed(0)}rb`;
@@ -70,41 +79,29 @@ export function SalesChart({ data }: SalesChartProps) {
           contentStyle={{
             backgroundColor: 'white',
             border: '1px solid #e5e7eb',
-            borderRadius: '8px',
+            borderRadius: '12px',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            padding: '12px',
           }}
           formatter={(value: any, name: string) => {
             if (name === 'revenue') return [formatCurrency(value), 'Pendapatan'];
-            if (name === 'orders') return [value, 'Pesanan'];
+            if (name === 'orders') return [value + ' pesanan', 'Jumlah Order'];
             return [value, name];
           }}
+          labelStyle={{ fontWeight: 600, marginBottom: '8px' }}
         />
-        <Legend 
-          wrapperStyle={{ paddingTop: '20px' }}
-          formatter={(value) => {
-            if (value === 'revenue') return 'Pendapatan';
-            if (value === 'orders') return 'Jumlah Pesanan';
-            return value;
-          }}
-        />
-        <Line 
+        
+        {/* PERBAIKAN: Hanya tampilkan revenue dengan area chart yang lebih eye-catching */}
+        <Area 
           type="monotone" 
           dataKey="revenue" 
           stroke="#0891b2" 
           strokeWidth={3}
-          dot={{ fill: '#0891b2', r: 4 }}
-          activeDot={{ r: 6 }}
+          fill="url(#colorRevenue)"
+          dot={{ fill: '#0891b2', r: 4, strokeWidth: 2, stroke: '#fff' }}
+          activeDot={{ r: 6, strokeWidth: 2 }}
         />
-        <Line 
-          type="monotone" 
-          dataKey="orders" 
-          stroke="#E8207E" 
-          strokeWidth={2}
-          dot={{ fill: '#E8207E', r: 3 }}
-          activeDot={{ r: 5 }}
-          yAxisId={0}
-        />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }

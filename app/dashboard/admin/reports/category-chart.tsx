@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 
 interface CategoryChartProps {
@@ -20,42 +20,48 @@ export function CategoryChart({ categories }: CategoryChartProps) {
     );
   }
 
+  // Format data untuk pie chart
+  const chartData = categories.map((cat, index) => ({
+    name: cat.name,
+    value: cat.totalRevenue,
+    color: COLORS[index % COLORS.length],
+    percentage: 0, // akan dihitung di custom label
+  }));
+
+  // Hitung total untuk persentase
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={categories} margin={{ top: 10, right: 10, left: 10, bottom: 60 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-        <XAxis 
-          dataKey="name" 
-          angle={-45}
-          textAnchor="end"
-          height={80}
-          tick={{ fontSize: 11 }}
-          stroke="#888"
-        />
-        <YAxis 
-          tick={{ fontSize: 12 }}
-          stroke="#888"
-          tickFormatter={(value) => {
-            if (value >= 1000000) return `${(value / 1000000).toFixed(1)}jt`;
-            if (value >= 1000) return `${(value / 1000).toFixed(0)}rb`;
-            return value;
+      <PieChart>
+        <Pie
+          data={chartData}
+          cx="50%"
+          cy="50%"
+          labelLine={false}
+          label={({ name, value }) => {
+            const percent = ((value / total) * 100).toFixed(1);
+            return `${name} (${percent}%)`;
           }}
-        />
+          outerRadius={80}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
+          ))}
+        </Pie>
         <Tooltip
           contentStyle={{
             backgroundColor: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: '8px',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            padding: '8px 12px',
           }}
           formatter={(value: any) => [formatCurrency(value), 'Pendapatan']}
         />
-        <Bar dataKey="totalRevenue" radius={[8, 8, 0, 0]}>
-          {categories.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Bar>
-      </BarChart>
+      </PieChart>
     </ResponsiveContainer>
   );
 }

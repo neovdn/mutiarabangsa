@@ -56,15 +56,6 @@ export default async function AdminDashboardPage() {
     <div className="-m-8 min-h-[calc(100vh-5rem)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6 md:p-8">
       
       <div className="container mx-auto max-w-[1400px] space-y-6">
-        
-        {/* HEADER SIMPLE (Pengganti Banner) */}
-        {/* Jarak ke atas dikurangi secara visual karena layout padding sudah di-reset */}
-        <div className="flex flex-col gap-1 pt-2">
-           <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-           <p className="text-sm text-gray-500">
-             Ringkasan aktivitas toko dan performa penjualan Anda hari ini.
-           </p>
-        </div>
 
         {/* STATS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

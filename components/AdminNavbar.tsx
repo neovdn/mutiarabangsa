@@ -110,7 +110,7 @@ export default function AdminNavbar({ userName }: AdminNavbarProps) {
             )}
           >
             <LayoutDashboard className="h-4 w-4" />
-            Dashboard
+            Beranda
           </Link>
 
           {/* Dropdown Toko */}

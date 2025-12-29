@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link'; // <--- 1. Import Link
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -60,7 +60,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <Card className="flex flex-col h-full overflow-hidden group border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white">
       
-      {/* 2. Bungkus Gambar dengan Link */}
+      {/* Gambar dengan Link */}
       <Link href={detailUrl} className="block relative aspect-square bg-gray-50 overflow-hidden cursor-pointer">
         <Image
           src={product.image_url || '/img/placeholder.png'}
@@ -84,7 +84,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
            {product.categories?.name || 'Lainnya'}
         </div>
         
-        {/* 3. Bungkus Judul dengan Link */}
+        {/* Judul dengan Link */}
         <Link href={detailUrl} className="block group-hover:text-[#E8207E] transition-colors">
           <h3 
             className="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight min-h-[2.5em] mb-1"
@@ -94,18 +94,18 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           </h3>
         </Link>
 
-        {/* Rating Display (Bisa diklik juga) */}
-        {reviewCount > 0 && (
-          <Link href={detailUrl} className="flex items-center gap-1 mb-1 w-fit cursor-pointer hover:opacity-80">
-            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-            <span className="text-xs font-bold text-gray-700">
-              {averageRating.toFixed(1)}
-            </span>
-            <span className="text-[10px] text-gray-400">
-              ({reviewCount} ulasan)
-            </span>
-          </Link>
-        )}
+        {/* Rating Display - Selalu Tampil agar seragam */}
+        <Link href={detailUrl} className="flex items-center gap-1 mb-1 w-fit cursor-pointer hover:opacity-80">
+          <Star 
+            className={`h-3 w-3 ${reviewCount > 0 ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`} 
+          />
+          <span className="text-xs font-bold text-gray-700">
+            {reviewCount > 0 ? averageRating.toFixed(1) : '0.0'}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            ({reviewCount > 0 ? `${reviewCount} ulasan` : 'Belum ada ulasan'})
+          </span>
+        </Link>
 
         <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-2">
            {product.description || 'Tidak ada deskripsi.'}
@@ -124,13 +124,21 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           size="sm"
           className="w-full h-8 text-xs bg-[#E8207E] hover:bg-[#E8207E]/90 text-white font-medium rounded-lg shadow-none"
           disabled={stockInfo.isOutOfStock}
-          onClick={(e) => {
-            e.preventDefault(); // Mencegah Link ter-trigger saat tombol ditekan
-            onAddToCart(product);
-          }}
+          asChild={!stockInfo.isOutOfStock} // Render sebagai Link jika stok tersedia
         >
-          <ShoppingCart className="h-3 w-3 mr-1.5" />
-          {stockInfo.isOutOfStock ? 'Habis' : 'Beli'}
+          {stockInfo.isOutOfStock ? (
+            // Tampilan saat disabled (tetap Button biasa)
+            <div className="flex items-center justify-center w-full h-full">
+              <ShoppingCart className="h-3 w-3 mr-1.5" />
+              Habis
+            </div>
+          ) : (
+            // Tampilan saat aktif (menjadi Link ke detail)
+            <Link href={detailUrl}>
+              <ShoppingCart className="h-3 w-3 mr-1.5" />
+              Beli
+            </Link>
+          )}
         </Button>
       </CardFooter>
     </Card>

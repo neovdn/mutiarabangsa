@@ -72,10 +72,11 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
               <CardFooter className="p-3 pt-0">
                  <Button 
                     size="sm" 
-                    className="w-full text-xs h-8 bg-[#E8207E] text-white hover:bg-[#E8207E]/90 shadow-sm" // <-- Warna Pink Kustom
+                    className="w-full text-xs h-8 bg-[#E8207E] text-white hover:bg-[#E8207E]/90 shadow-sm"
                     asChild
                  >
-                    <Link href={`/dashboard/customer/catalog?search=${encodeURIComponent(product.name)}`}>
+                    {/* Mengarah langsung ke halaman detail produk, bukan search */}
+                    <Link href={`/dashboard/customer/catalog/products/${product.id}`}>
                        Detail
                     </Link>
                  </Button>

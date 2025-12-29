@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessage {
   role: "user" | "model";
@@ -23,7 +24,6 @@ export default function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto scroll ke bawah saat ada pesan baru
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
@@ -39,18 +39,22 @@ export default function ChatWidget() {
     setIsLoading(true);
 
     try {
-      // Format history untuk Gemini (user -> model)
-      const history = messages.map(m => ({
+      let cleanHistory = messages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
       }));
+      
+      // Filter history agar tidak error (sesuai perbaikan sebelumnya)
+      if (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
+        cleanHistory = cleanHistory.slice(1);
+      }
 
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           message: userMessage, 
-          history: history 
+          history: cleanHistory 
         }),
       });
 
@@ -62,7 +66,7 @@ export default function ChatWidget() {
         throw new Error("No response");
       }
     } catch (error) {
-      setMessages((prev) => [...prev, { role: "model", text: "Maaf, saya sedang gangguan sebentar. Coba lagi ya!" }]);
+      setMessages((prev) => [...prev, { role: "model", text: "Maaf, Mono lagi pusing. Coba lagi nanti ya!" }]);
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +74,6 @@ export default function ChatWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Tombol Buka Tutup */}
       {!isOpen && (
         <Button 
           onClick={() => setIsOpen(true)} 
@@ -80,7 +83,6 @@ export default function ChatWidget() {
         </Button>
       )}
 
-      {/* Card Chatbox */}
       {isOpen && (
         <Card className="w-[350px] h-[500px] shadow-2xl flex flex-col animate-in slide-in-from-bottom-5 duration-300 border-2 border-blue-100">
           <CardHeader className="bg-blue-600 text-white rounded-t-lg py-3 flex flex-row items-center justify-between">
@@ -108,13 +110,29 @@ export default function ChatWidget() {
                   <div
                     key={index}
                     className={cn(
-                      "flex w-max max-w-[80%] flex-col gap-2 rounded-lg px-3 py-2 text-sm shadow-sm",
+                      "flex w-fit max-w-[90%] flex-col gap-2 rounded-lg px-3 py-2 text-sm shadow-sm break-words", // Hapus whitespace-pre-wrap karena sudah dihandle Markdown
                       m.role === "user"
                         ? "ml-auto bg-blue-600 text-white"
                         : "bg-white text-gray-800 border border-gray-200"
                     )}
                   >
-                    {m.text}
+                    {/* 2. Logic Rendering: User teks biasa, Model pakai Markdown */}
+                    {m.role === "user" ? (
+                      m.text
+                    ) : (
+                      <ReactMarkdown 
+                        components={{
+                          // Kustomisasi styling elemen HTML hasil markdown
+                          ul: ({node, ...props}) => <ul className="list-disc pl-4 mt-1 mb-2 space-y-1" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal pl-4 mt-1 mb-2 space-y-1" {...props} />,
+                          li: ({node, ...props}) => <li className="" {...props} />,
+                          strong: ({node, ...props}) => <span className="font-bold text-blue-700" {...props} />, // Biar bold-nya agak berwarna
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                        }}
+                      >
+                        {m.text}
+                      </ReactMarkdown>
+                    )}
                   </div>
                 ))}
                 {isLoading && (
@@ -133,7 +151,7 @@ export default function ChatWidget() {
               className="flex w-full items-center gap-2"
             >
               <Input
-                placeholder="Tanya stok seragam..."
+                placeholder="Tanya Mono tentang produk..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="flex-1 focus-visible:ring-blue-500"

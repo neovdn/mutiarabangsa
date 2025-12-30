@@ -21,9 +21,6 @@ export async function POST(req: Request) {
     
     const { message, history } = await req.json();
 
-    // --- FIX HISTORY ---
-    // Gemini mewajibkan history dimulai dengan 'user'. 
-    // Kita hapus pesan pertama jika itu dari 'model' (sapaan awal bot).
     let cleanHistory = history || [];
     if (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
       cleanHistory = cleanHistory.slice(1);
@@ -59,7 +56,6 @@ export async function POST(req: Request) {
          `${v.size} (Rp${v.price.toLocaleString('id-ID')}, Stok: ${v.stock})`
       ).join(", ");
 
-      // Kita berikan 'Raw Data' yang lengkap ke AI
       return `
 ID: ${p.id}
 Nama: ${p.name}
@@ -101,7 +97,6 @@ Varian: ${variantsInfo}
     `;
 
     // 5. Eksekusi Gemini
-    // Menggunakan model stabil 'gemini-1.5-flash'
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash-lite",
       systemInstruction: systemInstruction,

@@ -5,11 +5,6 @@ import { startOfYear, endOfYear } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 
-// Fungsi getSalesData & getStockData & getTopCategories (TETAP SAMA SEPERTI SEBELUMNYA)
-// ... (Kode fungsi lain disembunyikan agar fokus ke perbaikan) ...
-
-// Copy paste fungsi getSalesData, getStockData, getTopCategories dari file lamamu ke sini
-// Saya hanya menulis ulang getSalesData singkat untuk konteks, gunakan yang lama jika tidak berubah.
 async function getSalesData(startDate: Date, endDate: Date) {
   const supabase = createSupabaseServerClient();
   const { data: dailySales, error } = await supabase

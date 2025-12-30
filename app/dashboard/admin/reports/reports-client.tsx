@@ -23,11 +23,11 @@ import {
   DollarSign, 
   ShoppingBag,
   Calendar as CalendarIcon,
-  Download,
   FileText,
   BarChart3,
   AlertTriangle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sparkles // Icon untuk AI
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -38,8 +38,10 @@ import { StockTable } from './stock-table';
 import { CategoryChart } from './category-chart';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-// Import fungsi generator laporan
 import { generateExcel, generatePDF } from './report-generator';
+
+// Import komponen ForecastTab
+import ForecastTab from './forecast-tab';
 
 interface ReportsClientProps {
   initialSalesData: any;
@@ -374,8 +376,13 @@ export function ReportsClient({
                 <Package className="h-3.5 w-3.5 mr-1.5" />
                 Stok
               </TabsTrigger>
+              <TabsTrigger value="forecast" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm">
+                <Sparkles className="h-3.5 w-3.5 mr-1.5 text-indigo-500" />
+                Forecast AI
+              </TabsTrigger>
             </TabsList>
 
+            {/* Tombol Export hanya relevan di tab Sales/Stock, tapi ditampilkan umum */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
                <Button
                 variant="outline"
@@ -398,7 +405,7 @@ export function ReportsClient({
             </div>
           </div>
 
-          {/* Laporan Penjualan */}
+          {/* 1. Laporan Penjualan */}
           <TabsContent value="sales" className="space-y-4 mt-0">
             
             {/* Grafik Penjualan (Full Width) */}
@@ -449,9 +456,8 @@ export function ReportsClient({
             </div>
           </TabsContent>
 
-          {/* Laporan Stok (TIDAK BERUBAH BANYAK, HANYA WRAPPER) */}
+          {/* 2. Laporan Stok */}
           <TabsContent value="stock" className="space-y-4 mt-0">
-            {/* ... Isi Tabs Stock tetap sama dengan kode kamu sebelumnya ... */}
             <div className="grid grid-cols-2 gap-3">
               <Card className="border-l-4 border-l-amber-500 bg-white/90 backdrop-blur-sm shadow-sm">
                 <CardContent className="p-4">
@@ -499,6 +505,12 @@ export function ReportsClient({
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* 3. Laporan Forecast AI (New) */}
+          <TabsContent value="forecast" className="space-y-4 mt-0">
+            <ForecastTab />
+          </TabsContent>
+
         </Tabs>
       </div>
     </div>

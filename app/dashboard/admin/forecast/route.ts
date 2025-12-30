@@ -1,92 +1,96 @@
-import { createSupabaseServerClient } from '@/lib/supabaseServerClient'; // Gunakan ini
+import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Inisialisasi Gemini
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(req: Request) {
-  // Ganti inisialisasi client
   const supabase = createSupabaseServerClient();
 
-  // 1. Validasi Admin
+  // 1. Validasi Session
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    // 2. Ambil Data Penjualan Historis (12 Bulan Terakhir)
+    // 2. Ambil Data Penjualan (12 Bulan Terakhir)
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-    const { data: orders, error: orderError } = await supabase
+    const { data: orders, error } = await supabase
       .from('order_items')
       .select(`
         quantity,
-        created_at,
-        variant:product_variants (
+        variant_id,
+        variant:product_variants!inner (
             id,
             size,
             stock,
-            product:products (
+            product:products!inner (
                 name,
                 category:categories (name)
             )
         ),
-        order:orders!inner (status)
+        order:orders!inner (
+            created_at,
+            status
+        )
       `)
-      .gte('created_at', oneYearAgo.toISOString())
-      .in('order.status', ['shipped', 'completed']); // Filter order sukses
+      .gte('order.created_at', oneYearAgo.toISOString())
+      .in('order.status', ['shipped', 'completed']);
 
-    if (orderError) throw orderError;
+    if (error) throw error;
 
-    // 3. Agregasi Data
-    const summary: Record<string, any> = {};
+    // 3. Agregasi Data by Variant ID
+    // Kita gunakan Map untuk memastikan unique berdasarkan Variant ID
+    const summaryMap = new Map();
 
     orders?.forEach((item: any) => {
-        // Pastikan varian dan produk ada (handle case null/terhapus)
-        if (!item.variant || !item.variant.product) return;
-
-        const productName = `${item.variant.product.name} (${item.variant.size})`;
-        const monthKey = new Date(item.created_at).toISOString().slice(0, 7); // YYYY-MM
-
-        if (!summary[productName]) {
-            summary[productName] = {
-                history: {},
+        const variantId = item.variant_id; // Menggunakan ID dari skema
+        
+        if (!summaryMap.has(variantId)) {
+            summaryMap.set(variantId, {
+                id: variantId,
+                name: `${item.variant.product.name} (${item.variant.size})`,
+                category: item.variant.product.category?.name || 'Uncategorized',
                 currentStock: item.variant.stock,
-                category: item.variant.product.category?.name
-            };
+                history: {}
+            });
         }
 
-        if (!summary[productName].history[monthKey]) {
-            summary[productName].history[monthKey] = 0;
+        const entry = summaryMap.get(variantId);
+        const monthKey = new Date(item.order.created_at).toISOString().slice(0, 7); // YYYY-MM
+        
+        if (!entry.history[monthKey]) {
+            entry.history[monthKey] = 0;
         }
-        summary[productName].history[monthKey] += item.quantity;
+        entry.history[monthKey] += item.quantity;
     });
 
-    // 4. Prompt Engineering untuk Gemini (Konteks Indonesia)
+    // Konversi Map ke Array untuk dikirim ke Gemini
+    const inventoryData = Array.from(summaryMap.values());
+
+    // 4. Prompt Engineering dengan ID
     const prompt = `
-      Anda adalah AI Inventory Analyst untuk "Mutiara Bangsa", toko seragam sekolah di Indonesia.
+      Anda adalah AI Inventory Analyst untuk "Mutiara Bangsa".
       
-      KONTEKS SAA INI:
-      - Tanggal: ${new Date().toLocaleDateString('id-ID')}
-      - Musim:
-        * Jun-Jul: Tahun Ajaran Baru (Permintaan Tinggi)
-        * Jan: Semester 2 (Permintaan Sedang)
-        * Aug: 17 Agustus/Pramuka
+      KONTEKS:
+      - Tanggal Hari Ini: ${new Date().toLocaleDateString('id-ID')}
+      
+      DATA INVENTORY (JSON):
+      ${JSON.stringify(inventoryData)}
 
       TUGAS:
-      Analisis data penjualan berikut dan berikan rekomendasi restock.
-      
-      DATA (JSON):
-      ${JSON.stringify(summary)}
+      Analisis data history penjualan dan stok saat ini. Berikan rekomendasi restock untuk bulan depan.
+      PENTING: Kembalikan field "id" persis seperti data input agar sistem bisa menyimpannya.
 
-      OUTPUT JSON (Array):
+      OUTPUT FORMAT (JSON Array):
       [
         {
+          "id": "uuid-dari-data-input",
           "productName": "Nama Produk",
-          "currentStock": 0,
+          "currentStock": 10,
           "predictedDemandNextMonth": "High/Medium/Low",
-          "recommendedRestock": 0,
+          "recommendedRestock": 15,
           "reason": "Alasan singkat (Bahasa Indonesia)"
         }
       ]
@@ -98,8 +102,7 @@ export async function POST(req: Request) {
     });
 
     const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-    const recommendations = JSON.parse(responseText);
+    const recommendations = JSON.parse(result.response.text());
 
     return NextResponse.json({ recommendations });
 

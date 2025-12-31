@@ -53,7 +53,8 @@ export default function RegisterPage() {
       if (authError) throw authError;
 
       if (authData.user) {
-        const { error: profileError } = await supabase.from('profiles').insert([
+        // [PERBAIKAN 1] Menggunakan .upsert() agar tidak bentrok dengan Trigger Database
+        const { error: profileError } = await supabase.from('profiles').upsert([
           {
             id: authData.user.id,
             full_name: formData.fullName,
@@ -67,7 +68,17 @@ export default function RegisterPage() {
         router.push('/login?registered=true');
       }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat mendaftar');
+      // [PERBAIKAN 2] Logging error ke console browser untuk debugging
+      console.error('REGISTRATION ERROR:', err);
+
+      let pesanError = err.message || 'Terjadi kesalahan saat mendaftar';
+
+      // Deteksi error koneksi/AdBlocker
+      if (pesanError === 'Failed to fetch') {
+        pesanError = 'Gagal terhubung ke server. Mohon periksa koneksi internet anda atau matikan AdBlocker.';
+      }
+
+      setError(pesanError);
     } finally {
       setLoading(false);
     }
@@ -111,9 +122,6 @@ export default function RegisterPage() {
         {/* Kartu Form */}
         <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-2xl md:shadow-none md:p-0 md:bg-transparent">
           
-          {/* [DIHAPUS] Header Mobile "Buat Akun Baru" dihapus */}
-
-          {/* Title "Selamat Datang" sekarang muncul di Mobile & Desktop */}
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900">
             Daftar Akun
           </h2>
